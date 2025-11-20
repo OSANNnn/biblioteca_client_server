@@ -1,0 +1,36 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# BlueJ / JUnit / VS Code / Eclipse / IntelliJ stuff
+*.ctxt
+*.iml
+*.ipr
+*.iws
+.vscode/
+.idea/
+.classpath
+.settings/
+
+# Build directories
+bin/
+out/
+build/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~ 
+.DS_Store
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Java crash logs
+hs_err_pid*
+replay_pid*
