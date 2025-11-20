@@ -37,9 +37,9 @@ public class Item {
 		this.tipo = tipo;
 	}
 
-	private int id;
-	private String titolo;
-	private int quantita;
+	protected int id;
+	protected String titolo;
+	protected int quantita;
 	@JsonIgnoreProperties
 	ItemType tipo;
 }

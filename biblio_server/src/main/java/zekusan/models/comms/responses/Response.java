@@ -20,6 +20,6 @@ public class Response {
 		this.action = action;
 	}
 
-	ActionType action;
-	Status status;
+	protected ActionType action;
+	protected Status status;
 }

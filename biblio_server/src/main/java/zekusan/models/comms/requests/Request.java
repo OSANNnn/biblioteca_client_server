@@ -21,6 +21,6 @@ abstract public class Request {
 		this.action = action;
 	}
 
-	private int token;
-	private ActionType action;
+	protected int token;
+	protected ActionType action;
 }
