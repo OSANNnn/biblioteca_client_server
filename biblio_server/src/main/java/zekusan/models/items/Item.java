@@ -1,10 +1,9 @@
 package zekusan.models.items;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import zekusan.models.ItemType;
 
 public class Item {
+
 	public int getId() {
 		return id;
 	}
@@ -40,6 +39,5 @@ public class Item {
 	protected int id;
 	protected String titolo;
 	protected int quantita;
-	@JsonIgnoreProperties
 	ItemType tipo;
 }
