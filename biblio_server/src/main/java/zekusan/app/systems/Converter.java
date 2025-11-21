@@ -1,5 +1,7 @@
 package zekusan.app.systems;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -12,7 +14,6 @@ import zekusan.models.items.*;
 public class Converter {
 	static public String objectToJson(Object object) throws JacksonException {
 		String json = "";
-		ObjectMapper mapper = new ObjectMapper();
 
 		json = mapper.writeValueAsString(object);
 
@@ -20,81 +21,49 @@ public class Converter {
 	}
 
 	static public Request jsonToRequest(String jsonString, ActionType type) throws JacksonException {
-		Request instance;
-		ObjectMapper mapper = new ObjectMapper();
+		Class<? extends Request> classType = requestMap.get(type);
 
-		switch (type) {
-		case LOGIN: {
-			instance = mapper.readValue(jsonString, LoginRequest.class);
-			break;
-		}
-		case CATALOGO: {
-			instance = mapper.readValue(jsonString, CatalogoRequest.class);
-			break;
-		}
-		case PRENOTAZIONE: {
-			instance = mapper.readValue(jsonString, PrenotazioineRequest.class);
-			break;
-		}
-		default: {
-			instance = null;
-			break;
-		}
-		} //switch(type)
+		if (classType == null)
+			throw new IllegalArgumentException("Request type not supported");
 
-		return instance;
+		return mapper.readValue(jsonString, classType);
 	}
 
 	static public Response jsonToResponse(String jsonString, ActionType type) throws JacksonException {
-		Response instance;
-		ObjectMapper mapper = new ObjectMapper();
 
-		switch (type) {
-		case LOGIN: {
-			instance = mapper.readValue(jsonString, LoginResponse.class);
-			break;
-		}
-		case CATALOGO: {
-			instance = mapper.readValue(jsonString, CatalogoResponse.class);
-			break;
-		}
-		case PRENOTAZIONE: {
-			instance = mapper.readValue(jsonString, PrenotazioineResponse.class);
-			break;
-		}
-		default: {
-			instance = null;
-			break;
-		}
-		} //switch(type)
+		Class<? extends Response> classType = responseMap.get(type);
 
-		return instance;
+		if (classType == null)
+			throw new IllegalArgumentException("Response type not supported");
+
+		return mapper.readValue(jsonString, classType);
+
 	}
 
 	static public Item jsonToItem(String jsonString, ItemType type) throws JacksonException {
 
-		Item instance;
-		ObjectMapper mapper = new ObjectMapper();
+		Class<? extends Item> classType = itemMap.get(type);
 
-		switch (type) {
-		case LIBRO: {
-			instance = mapper.readValue(jsonString, Libro.class);
-			break;
-		}
-		case CD: {
-			instance = mapper.readValue(jsonString, CD.class);
-			break;
-		}
-		case RIVISTA: {
-			instance = mapper.readValue(jsonString, Rivista.class);
-			break;
-		}
-		default:
-			instance = null;
-			break;
+		if (classType == null)
+			throw new IllegalArgumentException("Item type not supported");
 
-		} //switch(type)
-
-		return instance;
+		return mapper.readValue(jsonString, classType);
 	}
+
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	private static final Map<ActionType, Class<? extends Request>> requestMap = Map.of(
+			ActionType.LOGIN, LoginRequest.class,
+			ActionType.CATALOGO, CatalogoRequest.class,
+			ActionType.PRENOTAZIONE, PrenotazioneRequest.class);
+
+	private static final Map<ActionType, Class<? extends Response>> responseMap = Map.of(
+			ActionType.LOGIN, LoginResponse.class,
+			ActionType.CATALOGO, CatalogoResponse.class,
+			ActionType.PRENOTAZIONE, PrenotazioneResponse.class);
+
+	private static final Map<ItemType, Class<? extends Item>> itemMap = Map.of(
+			ItemType.LIBRO, Libro.class,
+			ItemType.CD, CD.class,
+			ItemType.RIVISTA, Rivista.class);
 }
