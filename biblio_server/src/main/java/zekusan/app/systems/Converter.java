@@ -13,11 +13,9 @@ import zekusan.models.items.*;
 
 public class Converter {
 	static public String objectToJson(Object object) throws JacksonException {
-		String json = "";
+		if (object == null) throw new IllegalArgumentException("Object is null");
 
-		json = mapper.writeValueAsString(object);
-
-		return json;
+		return mapper.writeValueAsString(object);
 	}
 
 	static public Request jsonToRequest(String jsonString, ActionType type) throws JacksonException {
