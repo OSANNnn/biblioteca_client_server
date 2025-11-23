@@ -8,10 +8,18 @@ import java.util.ArrayList;
 import zekusan.models.ItemType;
 import zekusan.models.items.Item;
 
-public class Catalogo {
-	
-	public Catalogo() {
+public class CatalogoGen {
+
+	public CatalogoGen() {
 		lista = new ArrayList<>();
+	}
+
+	public ArrayList<Item> getLista(ItemType type) throws Exception {
+		if (lista.isEmpty()) {
+			create(type);
+		}
+
+		return lista;
 	}
 
 	public void create(ItemType type) throws Exception {
@@ -35,14 +43,6 @@ public class Catalogo {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public ArrayList<Item> getLista(ItemType type) throws Exception {
-		if (lista.isEmpty()) {
-			create(type);
-		}
-
-		return lista;
 	}
 
 	private String getFilePath(ItemType type) {

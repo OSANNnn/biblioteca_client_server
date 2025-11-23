@@ -11,17 +11,8 @@ public class Libro extends Item {
 		tipo = ItemType.LIBRO;
 	}
 
-	public String toString() {
-
-		String json = "";
-
-		try {
-			json = Converter.objectToJson(this);
-		} catch (JacksonException e) {
-			System.out.println("ERROR (JsonConverter): " + e.getMessage() + " for Libro id: " + id);
-		}
-
-		return json;
+	public String toJson() throws JacksonException {
+		return Converter.objectToJson(this);
 	}
 
 	public String getGenere() {

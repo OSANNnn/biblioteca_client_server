@@ -7,9 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import zekusan.models.ItemType;
 import zekusan.models.comms.ActionType;
+import zekusan.models.comms.UserType;
 import zekusan.models.comms.requests.*;
 import zekusan.models.comms.responses.*;
 import zekusan.models.items.*;
+import zekusan.models.users.Studente;
+import zekusan.models.users.User;
 
 public class Converter {
 	static public String objectToJson(Object object) throws JacksonException {
@@ -48,6 +51,16 @@ public class Converter {
 		return mapper.readValue(jsonString, classType);
 	}
 
+	static public User jsonToUser(String jsonString) throws JacksonException{
+		Class<? extends User> classType = userMap.get(UserType.STUDENTE);
+
+		//if (classType == null)
+		//	throw new IllegalArgumentException("User type not supported");
+
+		return mapper.readValue(jsonString, classType);
+	}
+	
+	
 	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private static final Map<ActionType, Class<? extends Request>> requestMap = Map.of(
@@ -64,4 +77,8 @@ public class Converter {
 			ItemType.LIBRO, Libro.class,
 			ItemType.CD, CD.class,
 			ItemType.RIVISTA, Rivista.class);
+	
+	private static final Map<UserType, Class<? extends User>> userMap = Map.of(
+			UserType.STUDENTE, Studente.class);
+			
 }

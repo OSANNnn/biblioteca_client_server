@@ -3,7 +3,8 @@ package zekusan.models.comms.requests;
 import zekusan.models.comms.ActionType;
 
 abstract public class Request {
-	public Request() {}
+	public Request() {
+	}
 
 	public int getToken() {
 		return token;
@@ -21,6 +22,15 @@ abstract public class Request {
 		this.action = action;
 	}
 
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
 	protected int token;
 	protected ActionType action;
+	protected String username;
 }

@@ -1,5 +1,7 @@
 package zekusan.models.users;
 
+import zekusan.models.comms.UserType;
+
 public class User {
 
 	public String getPassword() {
@@ -18,7 +20,6 @@ public class User {
 		this.password = password;
 	}
 
-	private int id;
 
 	public int getId() {
 		return id;
@@ -28,6 +29,16 @@ public class User {
 		this.id = id;
 	}
 
+	public UserType getUserType() {
+		return userType;
+	}
+
+	public void setUserType(UserType userType) {
+		this.userType = userType;
+	}
+
+	private int id;
 	protected String username;
 	protected String password;
+	private UserType userType;
 }

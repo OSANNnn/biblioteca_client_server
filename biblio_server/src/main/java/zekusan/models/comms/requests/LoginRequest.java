@@ -9,6 +9,9 @@ public class LoginRequest extends Request {
 		action = ActionType.LOGIN;
 	}
 	
+	LoginRequest() {
+	};
+	
 	public String getUsername() {
 		return username;
 	}
@@ -24,9 +27,6 @@ public class LoginRequest extends Request {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
-	LoginRequest() {
-	};
 
 	String username;
 	String password;

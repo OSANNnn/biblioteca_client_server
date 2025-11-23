@@ -1,7 +1,17 @@
 package zekusan.models.comms;
 
 public enum ActionType {
+	NONE,
 	LOGIN,
 	CATALOGO,
-	PRENOTAZIONE
+	PRENOTAZIONE;
+	
+	public static ActionType getType(String str) {
+		switch (str) {
+		case "login": return ActionType.LOGIN;
+		case "catalogo": return ActionType.CATALOGO;
+		case "prenotazione": return ActionType.PRENOTAZIONE;
+		default: return ActionType.NONE;
+		}
+	}
 }
