@@ -30,7 +30,7 @@ abstract public class Request {
 		this.username = username;
 	}
 
-	protected int token;
 	protected ActionType action;
+	protected int token;
 	protected String username;
 }

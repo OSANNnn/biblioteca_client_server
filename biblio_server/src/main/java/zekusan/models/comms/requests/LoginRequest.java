@@ -10,6 +10,7 @@ public class LoginRequest extends Request {
 	}
 	
 	LoginRequest() {
+		action = ActionType.LOGIN;
 	};
 	
 	public String getUsername() {
