@@ -1,5 +1,8 @@
 package zekusan.models.comms.requests;
 
-public class PrenotazioneRequest extends Request {
+import zekusan.models.ItemType;
 
+public class PrenotazioneRequest extends Request {
+	private int itemId;
+	private ItemType type;
 }

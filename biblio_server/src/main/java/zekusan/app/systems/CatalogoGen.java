@@ -1,7 +1,9 @@
 package zekusan.app.systems;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -15,22 +17,17 @@ public class CatalogoGen {
 	}
 
 	public ArrayList<Item> getLista(ItemType type) throws Exception {
-		if (lista.isEmpty()) {
-			create(type);
-		}
+		clear();
+		create(type);
 
 		return lista;
 	}
 
-	public void create(ItemType type) throws Exception {
+	private void create(ItemType type) throws Exception {
 		String filepath = getFilePath(type);
 
 		if (filepath == null) {
 			throw new Exception("Invalid Item type");
-		}
-
-		if (!lista.isEmpty()) {
-			lista.removeAll(lista);
 		}
 
 		try (BufferedReader buffer = new BufferedReader(new FileReader(filepath))) {
@@ -42,6 +39,34 @@ public class CatalogoGen {
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	//this method deletes the old file!
+	public void updateCatalog(ArrayList<Item> newList, ItemType type) throws Exception {
+		String filepath = getFilePath(type);
+		lista = newList;
+
+		if (filepath == null) {
+			throw new Exception("Invalid Item type");
+		}
+		
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filepath))) {
+			for (Item item : lista) {
+				String json = Converter.objectToJson(item);
+				writer.write(json);
+				writer.newLine();
+			}
+			writer.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public void clear() {
+		if (!lista.isEmpty()) {
+			lista.clear();
 		}
 	}
 
