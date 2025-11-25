@@ -58,7 +58,15 @@ public class SocketSystem {
         } catch (IOException e) {
             System.out.println("Error reading request: " + e.getMessage());
         }
-        return sb.toString();
+        
+        String json = sb.toString();
+        
+        if (json.equals("END")) {
+        	closeConnection();
+        	return null;
+        }
+        
+        return json;
 	}
 
 	public void sendResponse(String json) {
@@ -80,7 +88,7 @@ public class SocketSystem {
 		}
 	}
 
-	public void closeConnection() {
+	private void closeConnection() {
 		try {
 	        if (bufferedReader != null) bufferedReader.close();
 	        if (bufferedWriter != null) bufferedWriter.close();
