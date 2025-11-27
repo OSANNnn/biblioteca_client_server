@@ -7,10 +7,6 @@ import zekusan.models.users.User;
 import zekusan.models.users.UsersList;
 
 public class LoginSystem {
-
-	private LoginSystem() {
-		
-	}
 	
 	private static boolean CheckCredentials(LoginRequest request) {
 		boolean status = false;
@@ -31,14 +27,15 @@ public class LoginSystem {
 		if (CheckCredentials(req)) {
 			resp.setStatus(Status.SUCCESS);
 			resp.setToken(TokenSystem.generateToken());
+			SessionSystem.createSession(req.getUsername(), req.getToken());
 		}
 		else {
 			resp.setStatus(Status.FAILED);
-			resp.setToken(-1);
+			resp.setToken(ERROR_TOKEN);
 		}
 		
-		return resp;
+		return resp;		
 	}
-
-	//private static final LoginSystem instance = new LoginSystem();
+	
+	static final int ERROR_TOKEN = -1;
 }

@@ -1,7 +1,7 @@
 package zekusan.models.comms;
 
 public enum Status {
-	none,
+	NONE,
 	SUCCESS,
 	FAILED,
 	NOT_FOUND,

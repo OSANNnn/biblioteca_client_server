@@ -61,15 +61,14 @@ public class SocketSystem {
         
         String json = sb.toString();
         
-        if (json.equals("END")) {
-        	closeConnection();
-        	return null;
-        }
-        
         return json;
 	}
 
 	public void sendResponse(String json) {
+		if (json == null) {
+			json = "NONE|{}";
+		}
+		
 		if (printWriter != null) {
 			printWriter.print(json);
 			printWriter.flush();
@@ -78,7 +77,7 @@ public class SocketSystem {
 		}
 	}
 	
-	private void closeConnection() {
+	public void closeConnection() {
 		try {
 			if (bufferedReader != null) bufferedReader.close();
 			if (bufferedWriter != null) bufferedWriter.close();

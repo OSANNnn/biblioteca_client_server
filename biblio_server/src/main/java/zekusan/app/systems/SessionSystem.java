@@ -3,20 +3,20 @@ package zekusan.app.systems;
 import java.util.Map;
 
 public class SessionSystem {
-	public SessionSystem getInstance() {
-		return instance;
+	
+	public static boolean createSession(String user, int token) {		
+		if (instance.sessions.containsKey(user)) {
+			System.out.println("[ERROR] Session for: " + user + " , already exists.");
+			return false;
+		}
+		
+		instance.sessions.put(user, token);
+		
+		return true;
 	}
 	
-	public int createSession(String user) {
-		int token = TokenSystem.generateToken();
-		sessions.put(user, token);
-		
-		return token;
-	}
-	
-	public boolean checkSession(int token, String user) {
-		
-		return sessions.get(user) == token;
+	public static boolean validateSession(String user, int token) {		
+		return instance.sessions.get(user) == token;
 	}
 	
 	public void deleteSession(String user) {
