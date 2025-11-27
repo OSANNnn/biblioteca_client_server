@@ -1,8 +1,10 @@
 package zekusan.models.comms.requests;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import zekusan.models.comms.ActionType;
 
-abstract public class Request {
+public class Request {
 	public Request() {
 	}
 
@@ -29,7 +31,8 @@ abstract public class Request {
 	public void setUsername(String username) {
 		this.username = username;
 	}
-
+	
+	@JsonIgnore
 	protected ActionType action;
 	protected int token;
 	protected String username;

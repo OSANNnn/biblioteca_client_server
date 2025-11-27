@@ -34,7 +34,7 @@ public class SocketSystem {
 
 	public void listen() throws IOException {
 		clientSocket = serverSocket.accept();
-		System.out.println("Connection accepted: ");
+		System.out.println("Connection accepted: " + clientSocket);
 
 		inputStreamReader = new InputStreamReader(clientSocket.getInputStream());
 		outputStreamWriter = new OutputStreamWriter(clientSocket.getOutputStream());
@@ -77,28 +77,29 @@ public class SocketSystem {
 			System.out.println("Writer not initialized");
 		}
 	}
+	
+	private void closeConnection() {
+		try {
+			if (bufferedReader != null) bufferedReader.close();
+			if (bufferedWriter != null) bufferedWriter.close();
+			if (printWriter != null) printWriter.close();
+			if (inputStreamReader != null) inputStreamReader.close();
+			if (outputStreamWriter != null) outputStreamWriter.close();
+			if (clientSocket != null) clientSocket.close();
+		} catch (IOException e) {
+			System.out.println("Error closing connection: " + e.getMessage());
+		}
+	}
 
 	public void closeSocket() {
 		try {
+			closeConnection();
 			if (serverSocket != null)
 				serverSocket.close();
 			status = false;
 		} catch (IOException e) {
 			System.out.println("Error closing server socket: " + e.getMessage());
 		}
-	}
-
-	private void closeConnection() {
-		try {
-	        if (bufferedReader != null) bufferedReader.close();
-	        if (bufferedWriter != null) bufferedWriter.close();
-	        if (printWriter != null) printWriter.close();
-	        if (inputStreamReader != null) inputStreamReader.close();
-	        if (outputStreamWriter != null) outputStreamWriter.close();
-	        if (clientSocket != null) clientSocket.close();
-	    } catch (IOException e) {
-	        System.out.println("Error closing connection: " + e.getMessage());
-	    }
 	}
 
 	public boolean isOnline() {

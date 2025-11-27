@@ -1,5 +1,7 @@
 package zekusan.models.comms.responses;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import zekusan.models.comms.ActionType;
 import zekusan.models.comms.Status;
 
@@ -19,7 +21,8 @@ public class Response {
 	public void setAction(ActionType action) {
 		this.action = action;
 	}
-
+	
+	@JsonIgnore
 	protected ActionType action;
 	protected Status status;
 }

@@ -9,6 +9,7 @@ public class CatalogoRequest extends Request {
 	}
 	
 	public CatalogoRequest (int token, String username, ItemType categoria) {
+		action = ActionType.CATALOGO;
 		this.categoria = categoria;
 		this.username = username;
 		this.token = token;

@@ -3,9 +3,20 @@ package zekusan.models.comms.responses;
 import java.util.ArrayList;
 
 import zekusan.models.ItemType;
+import zekusan.models.comms.ActionType;
 import zekusan.models.items.Item;
 
 public class CatalogoResponse extends Response {
+	
+	public CatalogoResponse () {
+		action = ActionType.CATALOGO;
+	}
+	
+	public CatalogoResponse (ArrayList<? extends Item> catalogo, ItemType categoria) {
+		action = ActionType.CATALOGO;
+		this.catalogo = catalogo;
+		this.categoria = categoria;
+	}
 
 	public ArrayList<? extends Item> getCatalogo() {
 		return catalogo;
