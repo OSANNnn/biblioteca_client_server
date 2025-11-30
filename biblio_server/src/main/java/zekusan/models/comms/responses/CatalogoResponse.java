@@ -12,17 +12,17 @@ public class CatalogoResponse extends Response {
 		action = ActionType.CATALOGO;
 	}
 	
-	public CatalogoResponse (ArrayList<? extends Item> catalogo, ItemType categoria) {
+	public CatalogoResponse (ArrayList<Item> catalogo, ItemType categoria) {
 		action = ActionType.CATALOGO;
 		this.catalogo = catalogo;
 		this.categoria = categoria;
 	}
 
-	public ArrayList<? extends Item> getCatalogo() {
+	public ArrayList<Item> getCatalogo() {
 		return catalogo;
 	}
 
-	public void setCatalogo(ArrayList<? extends Item> catalogo) {
+	public void setCatalogo(ArrayList<Item> catalogo) {
 		this.catalogo = catalogo;
 	}
 
@@ -34,6 +34,6 @@ public class CatalogoResponse extends Response {
 		this.categoria = categoria;
 	}
 
-	ArrayList<? extends Item> catalogo;
-	ItemType categoria;
+	private ArrayList<Item> catalogo;
+	private ItemType categoria;
 }

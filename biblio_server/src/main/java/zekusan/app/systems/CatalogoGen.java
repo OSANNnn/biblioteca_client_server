@@ -16,14 +16,14 @@ public class CatalogoGen {
 		lista = new ArrayList<>();
 	}
 
-	public ArrayList<Item> getLista(ItemType type) throws Exception {
+	public static ArrayList<Item> getLista(ItemType type) throws Exception {
 		clear();
 		create(type);
 
 		return lista;
 	}
 
-	private void create(ItemType type) throws Exception {
+	private static void create(ItemType type) throws Exception {
 		String filepath = getFilePath(type);
 
 		if (filepath == null) {
@@ -43,7 +43,7 @@ public class CatalogoGen {
 	}
 	
 	//this method deletes the old file!
-	public void updateCatalog(ArrayList<Item> newList, ItemType type) throws Exception {
+	public static void updateCatalog(ArrayList<Item> newList, ItemType type) throws Exception {
 		String filepath = getFilePath(type);
 		lista = newList;
 
@@ -64,15 +64,15 @@ public class CatalogoGen {
 
 	}
 
-	public void clear() {
+	public static void clear() {
 		if (!lista.isEmpty()) {
 			lista.clear();
 		}
 	}
 
-	private String getFilePath(ItemType type) {
+	private static String getFilePath(ItemType type) {
 
-		// TODO: FILEPATHS MUST BE UPDATED!!! DONT USE THIS VALUES
+		// TODO: FILEPATHS MUST BE UPDATED!!! DONT USE THeSe VALUES
 		switch (type) {
 		case LIBRO:
 			return "libri.jsonl";
@@ -85,5 +85,5 @@ public class CatalogoGen {
 		}
 	}
 
-	private ArrayList<Item> lista;
+	private static ArrayList<Item> lista;
 }

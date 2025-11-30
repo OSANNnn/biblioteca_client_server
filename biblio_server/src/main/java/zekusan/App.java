@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JacksonException;
 
 import zekusan.app.systems.*;
+import zekusan.models.comms.Status;
 import zekusan.models.comms.requests.*;
 import zekusan.models.comms.responses.*;
 
@@ -29,15 +30,16 @@ public class App {
 			Request request = RequestHandler.process(jsonRequest);
 			switch (request.getAction()) {
 			case LOGIN: {
-				response = LoginSystem.Login((LoginRequest) request);
 				jsonResponse = "login|";
+				response = LoginSystem.Login((LoginRequest) request);
 				break;
 			}
 			case CATALOGO: {
 				if (SessionSystem.validateSession(request.getUsername(), request.getToken())) {
-
+					response = CatalogSystem.respond((CatalogoRequest)request);
 				} else {
-
+					response = new CatalogoResponse();
+					response.setStatus(Status.BAD_REQUEST);
 				}
 				jsonResponse = "catalogo|";
 				break;
