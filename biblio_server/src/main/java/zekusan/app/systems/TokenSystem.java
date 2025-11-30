@@ -18,7 +18,8 @@ public class TokenSystem {
 		int token;
 		
 		do {
-			token = Math.abs(generator.nextInt());
+			int randomValue = generator.nextInt();
+			token = Math.abs(randomValue);
 			
 			if (!inUse.contains(token)) {
 				isUnique = true;

@@ -1,6 +1,6 @@
 package zekusan.models.comms.responses;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import zekusan.models.ItemType;
 import zekusan.models.comms.ActionType;
@@ -12,17 +12,17 @@ public class CatalogoResponse extends Response {
 		action = ActionType.CATALOGO;
 	}
 	
-	public CatalogoResponse (ArrayList<Item> catalogo, ItemType categoria) {
+	public CatalogoResponse (List<Item> catalogo, ItemType categoria) {
 		action = ActionType.CATALOGO;
 		this.catalogo = catalogo;
 		this.categoria = categoria;
 	}
 
-	public ArrayList<Item> getCatalogo() {
+	public List<Item> getCatalogo() {
 		return catalogo;
 	}
 
-	public void setCatalogo(ArrayList<Item> catalogo) {
+	public void setCatalogo(List<Item> catalogo) {
 		this.catalogo = catalogo;
 	}
 
@@ -34,6 +34,6 @@ public class CatalogoResponse extends Response {
 		this.categoria = categoria;
 	}
 
-	private ArrayList<Item> catalogo;
+	private List<Item> catalogo;
 	private ItemType categoria;
 }

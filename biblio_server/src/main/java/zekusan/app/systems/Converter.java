@@ -15,13 +15,17 @@ import zekusan.models.users.Studente;
 import zekusan.models.users.User;
 
 public class Converter {
-	static public String objectToJson(Object object) throws JacksonException {
+	private Converter () {
+		
+	}
+	
+	public static String objectToJson(Object object) throws JacksonException {
 		if (object == null) throw new IllegalArgumentException("Object is null");
 
 		return mapper.writeValueAsString(object);
 	}
 
-	static public Request jsonToRequest(String jsonString, ActionType type) throws JacksonException {
+	public static Request jsonToRequest(String jsonString, ActionType type) throws JacksonException {
 		Class<? extends Request> classType = requestMap.get(type);
 
 		if (classType == null)
@@ -30,7 +34,7 @@ public class Converter {
 		return mapper.readValue(jsonString, classType);
 	}
 
-	static public Response jsonToResponse(String jsonString, ActionType type) throws JacksonException {
+	public static Response jsonToResponse(String jsonString, ActionType type) throws JacksonException {
 
 		Class<? extends Response> classType = responseMap.get(type);
 
@@ -41,7 +45,7 @@ public class Converter {
 
 	}
 
-	static public Item jsonToItem(String jsonString, ItemType type) throws JacksonException {
+	public static Item jsonToItem(String jsonString, ItemType type) throws JacksonException {
 
 		Class<? extends Item> classType = itemMap.get(type);
 
@@ -51,11 +55,9 @@ public class Converter {
 		return mapper.readValue(jsonString, classType);
 	}
 
-	static public User jsonToUser(String jsonString) throws JacksonException{
+	public static User jsonToUser(String jsonString) throws JacksonException{
 		Class<? extends User> classType = userMap.get(UserType.STUDENTE);
 
-		//if (classType == null)
-		//	throw new IllegalArgumentException("User type not supported");
 
 		return mapper.readValue(jsonString, classType);
 	}

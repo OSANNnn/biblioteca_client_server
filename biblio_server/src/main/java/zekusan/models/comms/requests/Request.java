@@ -6,6 +6,7 @@ import zekusan.models.comms.ActionType;
 
 public class Request {
 	public Request() {
+		//constructor used for jackson
 	}
 
 	public int getToken() {

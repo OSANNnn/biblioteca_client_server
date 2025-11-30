@@ -2,35 +2,36 @@ package zekusan.app.systems;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import zekusan.models.ItemType;
 import zekusan.models.items.Item;
 
 public class CatalogoGen {
 
-	public CatalogoGen() {
-		lista = new ArrayList<>();
+	private CatalogoGen() {
 	}
 
-	public static ArrayList<Item> getLista(ItemType type) throws Exception {
+	public static List<Item> getLista(ItemType type) throws IOException {
 		clear();
 		create(type);
 
 		return lista;
 	}
 
-	private static void create(ItemType type) throws Exception {
+	private static void create(ItemType type) throws IOException {
 		String filepath = getFilePath(type);
 
 		if (filepath == null) {
-			throw new Exception("Invalid Item type");
+			throw new IOException("Invalid Item type");
 		}
 
-		try (BufferedReader buffer = new BufferedReader(new FileReader(filepath))) {
+		InputStreamReader in = new InputStreamReader(CatalogoGen.class.getResourceAsStream(filepath));
+		try (BufferedReader buffer = new BufferedReader(in)) {
 			String line;
 
 			while ((line = buffer.readLine()) != null) {
@@ -43,12 +44,12 @@ public class CatalogoGen {
 	}
 	
 	//this method deletes the old file!
-	public static void updateCatalog(ArrayList<Item> newList, ItemType type) throws Exception {
+	public static void updateCatalog(List<Item> newList, ItemType type) throws IOException {
 		String filepath = getFilePath(type);
 		lista = newList;
 
 		if (filepath == null) {
-			throw new Exception("Invalid Item type");
+			throw new IOException("Invalid Item type");
 		}
 		
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filepath))) {
@@ -72,18 +73,17 @@ public class CatalogoGen {
 
 	private static String getFilePath(ItemType type) {
 
-		// TODO: FILEPATHS MUST BE UPDATED!!! DONT USE THeSe VALUES
 		switch (type) {
 		case LIBRO:
-			return "libri.jsonl";
+			return "/Libri.jsonl";
 		case RIVISTA:
-			return "riviste.jsonl";
+			return "/Riviste.jsonl";
 		case CD:
-			return "cd.jsonl";
+			return "/Cd.jsonl";
 		default:
 			return null;
 		}
 	}
 
-	private static ArrayList<Item> lista;
+	private static List<Item> lista = new ArrayList<>();
 }

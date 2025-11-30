@@ -9,7 +9,7 @@ import zekusan.models.comms.requests.Request;
 
 public class RequestHandler {
 	public static Request process(String request) {
-		int separatorPosition = request.indexOf(separator);
+		int separatorPosition = request.indexOf(SEPARATOR);
 		String header = request.substring(0, separatorPosition);
 		String body = request.substring(separatorPosition + 1);
 		ActionType type = requestMap.get(header);
@@ -24,10 +24,14 @@ public class RequestHandler {
 		return obj;
 	}
 	
-	static private Map<String, ActionType> requestMap = Map.of(
+	private RequestHandler() {
+		
+	}
+	
+	private static Map<String, ActionType> requestMap = Map.of(
 			"login", ActionType.LOGIN,
 			"catalogo", ActionType.CATALOGO,
 			"prenotazione", ActionType.PRENOTAZIONE);
 	
-	static private final char separator = '|';
+	private static final char SEPARATOR = '|';
 }

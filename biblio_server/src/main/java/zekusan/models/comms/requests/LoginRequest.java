@@ -11,16 +11,8 @@ public class LoginRequest extends Request {
 	
 	LoginRequest() {
 		action = ActionType.LOGIN;
-	};
+	}
 	
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String user) {
-		this.username = user;
-	}
-
 	public String getPassword() {
 		return password;
 	}
@@ -29,6 +21,5 @@ public class LoginRequest extends Request {
 		this.password = password;
 	}
 
-	String username;
 	String password;
 }

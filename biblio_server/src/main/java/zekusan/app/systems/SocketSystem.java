@@ -59,9 +59,8 @@ public class SocketSystem {
             System.out.println("Error reading request: " + e.getMessage());
         }
         
-        String json = sb.toString();
         
-        return json;
+        return sb.toString();
 	}
 
 	public void sendResponse(String json) {

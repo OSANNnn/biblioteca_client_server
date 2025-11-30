@@ -1,7 +1,7 @@
 package zekusan.models;
 
 public enum ItemType {
-	none,
+	NONE,
 	LIBRO,
 	CD,
 	RIVISTA

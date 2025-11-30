@@ -1,20 +1,21 @@
 package zekusan.models.users;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import zekusan.app.systems.Converter;
 
 
 public class UsersList {
-	private static UsersList GetInstance() {
+	private static UsersList getInstance() {
 		return instance;
 	}
 
-	public static ArrayList<User> getUsers() {
-		return UsersList.GetInstance().getList();
+	public static List<User> getUsers() {
+		return UsersList.getInstance().getList();
 	}
 
 	private UsersList () {
@@ -29,13 +30,11 @@ public class UsersList {
 	}
 
 	private void updateList() throws IOException {
-		String filepath = getFilePath();
-
-		if (filepath == null) {
-			throw new IOException("Invalid userslist file");
-		}
-
-		try (BufferedReader buffer = new BufferedReader(new FileReader(filepath))) {
+		String filepath = USER_LIST_PATH;
+		
+		InputStreamReader in = new InputStreamReader(UsersList.class.getResourceAsStream(filepath));
+		
+		try (BufferedReader buffer = new BufferedReader(in)) {
 			String line;
 
 			while ((line = buffer.readLine()) != null) {
@@ -47,10 +46,6 @@ public class UsersList {
 		}
 	}
 
-	private String getFilePath() {
-		// TODO: CHANGE THE PATH!!!
-		return "filepath";
-	}
 	
 	private ArrayList<User> getList() {
 		return list;
@@ -58,4 +53,5 @@ public class UsersList {
 
 	private static final UsersList instance = new UsersList();
 	private ArrayList<User> list;
+	private static final String USER_LIST_PATH = "/Users.jsonl";
 }

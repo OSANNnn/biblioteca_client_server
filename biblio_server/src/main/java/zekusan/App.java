@@ -28,10 +28,11 @@ public class App {
 			Response response = null; // null to be removed?
 			String jsonRequest = socket.getRequest();
 			Request request = RequestHandler.process(jsonRequest);
+			
 			switch (request.getAction()) {
 			case LOGIN: {
 				jsonResponse = "login|";
-				response = LoginSystem.Login((LoginRequest) request);
+				response = LoginSystem.login((LoginRequest) request);
 				break;
 			}
 			case CATALOGO: {
@@ -46,7 +47,7 @@ public class App {
 			}
 			case PRENOTAZIONE: {
 				if (SessionSystem.validateSession(request.getUsername(), request.getToken())) {
-
+					
 				} else {
 
 				}

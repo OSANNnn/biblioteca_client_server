@@ -8,7 +8,7 @@ import zekusan.models.users.UsersList;
 
 public class LoginSystem {
 	
-	private static boolean CheckCredentials(LoginRequest request) {
+	private static boolean checkCredentials(LoginRequest request) {
 		boolean status = false;
 		
 		for(User u : UsersList.getUsers())
@@ -21,10 +21,10 @@ public class LoginSystem {
 		return status;
 	}
 	
-	public static LoginResponse Login(LoginRequest req) {
+	public static LoginResponse login(LoginRequest req) {
 		LoginResponse resp = new LoginResponse();
 		
-		if (CheckCredentials(req)) {
+		if (checkCredentials(req)) {
 			resp.setStatus(Status.SUCCESS);
 			resp.setToken(TokenSystem.generateToken());
 			SessionSystem.createSession(req.getUsername(), req.getToken());
@@ -35,6 +35,10 @@ public class LoginSystem {
 		}
 		
 		return resp;		
+	}
+	
+	private LoginSystem() {
+		
 	}
 	
 	static final int ERROR_TOKEN = -1;
