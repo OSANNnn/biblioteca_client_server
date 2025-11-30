@@ -18,6 +18,7 @@
 bin/
 out/
 build/
+target/
 
 # Temporary files
 *.tmp
