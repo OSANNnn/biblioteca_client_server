@@ -28,16 +28,16 @@ public class App {
 			Response response = null; // null to be removed?
 			String jsonRequest = socket.getRequest();
 			Request request = RequestHandler.process(jsonRequest);
-			
+
 			switch (request.getAction()) {
 			case LOGIN: {
 				jsonResponse = "login|";
-				response = LoginSystem.login((LoginRequest)request);
+				response = LoginSystem.login((LoginRequest) request);
 				break;
 			}
 			case CATALOGO: {
 				if (SessionSystem.validateSession(request.getUsername(), request.getToken())) {
-					response = CatalogSystem.respond((CatalogoRequest)request);
+					response = CatalogSystem.respond((CatalogoRequest) request);
 				} else {
 					response = new CatalogoResponse();
 					response.setStatus(Status.BAD_REQUEST);
@@ -47,7 +47,7 @@ public class App {
 			}
 			case PRENOTAZIONE: {
 				if (SessionSystem.validateSession(request.getUsername(), request.getToken())) {
-					response = PrenotazioneSystem.respond((PrenotazioneRequest)request);
+					response = PrenotazioneSystem.respond((PrenotazioneRequest) request);
 				} else {
 					response = new PrenotazioneResponse();
 					response.setStatus(Status.BAD_REQUEST);
@@ -56,20 +56,19 @@ public class App {
 				break;
 			}
 			case NONE: {
-				jsonResponse = "NONE|";
+				jsonResponse = "NONE|{}";
 				break;
 			}
 			default:
+				jsonResponse = "NONE|{}";
 				break;
 			}
 
 			try {
 				jsonResponse += Converter.objectToJson(response);
-			} catch (JacksonException e) {
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				System.out.println(e);
-			}
+			} catch (JacksonException | IllegalArgumentException e) {
+				System.out.println(e.getMessage());
+			} 
 
 			socket.sendResponse(jsonResponse);
 			socket.closeConnection();
