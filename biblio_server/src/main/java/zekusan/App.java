@@ -32,7 +32,7 @@ public class App {
 			switch (request.getAction()) {
 			case LOGIN: {
 				jsonResponse = "login|";
-				response = LoginSystem.login((LoginRequest) request);
+				response = LoginSystem.login((LoginRequest)request);
 				break;
 			}
 			case CATALOGO: {
@@ -47,9 +47,10 @@ public class App {
 			}
 			case PRENOTAZIONE: {
 				if (SessionSystem.validateSession(request.getUsername(), request.getToken())) {
-					
+					response = PrenotazioneSystem.respond((PrenotazioneRequest)request);
 				} else {
-
+					response = new PrenotazioneResponse();
+					response.setStatus(Status.BAD_REQUEST);
 				}
 				jsonResponse = "prenotazione|";
 				break;
