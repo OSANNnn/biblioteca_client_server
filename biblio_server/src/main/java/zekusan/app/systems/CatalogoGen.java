@@ -17,14 +17,12 @@ public class CatalogoGen {
 	}
 
 	public static List<Item> getLista(ItemType type) throws IOException {
-		clear();
-		create(type);
-
-		return lista;
+		return create(type);
 	}
 
-	private static void create(ItemType type) throws IOException {
+	private static List<Item> create(ItemType type) throws IOException {
 		String filepath = getFilePath(type);
+		List<Item> newCatalogo = new ArrayList<>();
 
 		if (filepath == null) {
 			throw new IOException("Invalid Item type");
@@ -36,24 +34,25 @@ public class CatalogoGen {
 
 			while ((line = buffer.readLine()) != null) {
 				Item newItem = Converter.jsonToItem(line, type);
-				lista.add(newItem);
+				newCatalogo.add(newItem);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		return newCatalogo;
 	}
 	
 	//this method deletes the old file!
-	public static void updateCatalog(List<Item> newList, ItemType type) throws IOException {
+	public static void updateCatalog(List<Item> catalogo, ItemType type) throws IOException {
 		String filepath = getFilePath(type);
-		lista = newList;
 
 		if (filepath == null) {
 			throw new IOException("Invalid Item type");
 		}
 		
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filepath))) {
-			for (Item item : lista) {
+			for (Item item : catalogo) {
 				String json = Converter.objectToJson(item);
 				writer.write(json);
 				writer.newLine();
@@ -63,12 +62,6 @@ public class CatalogoGen {
 			e.printStackTrace();
 		}
 
-	}
-
-	public static void clear() {
-		if (!lista.isEmpty()) {
-			lista.clear();
-		}
 	}
 
 	private static String getFilePath(ItemType type) {
@@ -84,6 +77,4 @@ public class CatalogoGen {
 			return null;
 		}
 	}
-
-	private static List<Item> lista = new ArrayList<>();
 }
