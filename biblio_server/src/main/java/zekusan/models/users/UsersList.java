@@ -20,7 +20,6 @@ public class UsersList {
 
 	private UsersList () {
 		try {
-			
 			updateList();
 		}
 		catch (IOException e)
@@ -52,6 +51,6 @@ public class UsersList {
 	}
 
 	private static final UsersList instance = new UsersList();
-	private ArrayList<User> list;
+	private ArrayList<User> list = new ArrayList<>();
 	private static final String USER_LIST_PATH = "/Users.jsonl";
 }
