@@ -7,6 +7,13 @@
   <version>1.0-SNAPSHOT</version>
   <name>biblio_client</name>
   <url>http://maven.apache.org</url>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -21,4 +28,19 @@
         <version>2.20.1</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.12.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
 </project>
