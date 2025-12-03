@@ -2,9 +2,14 @@ package zekusan.app.systems;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +25,7 @@ public class CatalogoGen {
 		return create(type);
 	}
 
-	private static List<Item> create(ItemType type) throws IOException {
+	private static List<Item> createOLD(ItemType type) throws IOException {
 		String filepath = getFilePath(type);
 		List<Item> newCatalogo = new ArrayList<>();
 
@@ -43,15 +48,58 @@ public class CatalogoGen {
 		return newCatalogo;
 	}
 	
-	//this method deletes the old file!
-	public static void updateCatalog(List<Item> catalogo, ItemType type) throws IOException {
+	private static List<Item> create(ItemType type) throws IOException {
+		List<Item> newCatalogo = new ArrayList<>();
 		String filepath = getFilePath(type);
 
 		if (filepath == null) {
 			throw new IOException("Invalid Item type");
 		}
 		
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filepath))) {
+		ClassLoader cl = CatalogoGen.class.getClassLoader();
+		URL url = cl.getResource("classes/data" + filepath);
+		Path path = null;
+		
+		try {
+			path = Paths.get(url.toURI());
+		} catch (URISyntaxException e) {
+			System.out.println(e);
+		}
+
+		try (BufferedReader reader = Files.newBufferedReader(path)) {
+			String line;
+
+			while ((line = reader.readLine()) != null) {
+				Item newItem = Converter.jsonToItem(line, type);
+				newCatalogo.add(newItem);
+			}
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return newCatalogo;
+	}
+	
+	//this method deletes the old file!
+	public static void updateCatalog(List<Item> catalogo, ItemType type) throws IOException {
+		String filepath = getFilePath(type);
+		ClassLoader cl = CatalogoGen.class.getClassLoader();
+		URL url = cl.getResource("classes/data" + filepath);
+		Path path = null;
+		
+		try {
+			path = Paths.get(url.toURI());
+		} catch (URISyntaxException e) {
+			System.out.println(e);
+		}
+
+		if (filepath == null) {
+			throw new IOException("Invalid Item type");
+		}
+		
+		try (BufferedWriter writer = Files.newBufferedWriter(path, 
+                StandardOpenOption.CREATE, 
+                StandardOpenOption.TRUNCATE_EXISTING)) {
 			for (Item item : catalogo) {
 				String json = Converter.objectToJson(item);
 				writer.write(json);
