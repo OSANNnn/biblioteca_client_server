@@ -39,9 +39,9 @@ public class TokenSystem {
 		return instance;
 	}
 	
-	private TokenSystem() {};
+	private TokenSystem() {}
 	
 	private Random generator = new Random();
 	private static TokenSystem instance = new TokenSystem();
-	private Set<Integer> inUse;
+	private Set<Integer> inUse = new java.util.HashSet<>();
 }

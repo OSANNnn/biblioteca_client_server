@@ -25,9 +25,10 @@ public class LoginSystem {
 		LoginResponse resp = new LoginResponse();
 		
 		if (checkCredentials(req)) {
+			int generatedToken = TokenSystem.generateToken();
 			resp.setStatus(Status.SUCCESS);
-			resp.setToken(TokenSystem.generateToken());
-			SessionSystem.createSession(req.getUsername(), req.getToken());
+			resp.setToken(generatedToken);
+			SessionSystem.createSession(req.getUsername(), generatedToken);
 		}
 		else {
 			resp.setStatus(Status.FAILED);
