@@ -2,7 +2,11 @@ package zekusan.models.users;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,11 +33,19 @@ public class UsersList {
 	}
 
 	private void updateList() throws IOException {
-		String filepath = USER_LIST_PATH;
+		String fileName = USER_LIST_FILENAME;
 		
-		InputStreamReader in = new InputStreamReader(UsersList.class.getResourceAsStream(filepath));
+		ClassLoader cl = UsersList.class.getClassLoader();
+		URL url = cl.getResource("data/" + fileName);
+		Path path = null;
 		
-		try (BufferedReader buffer = new BufferedReader(in)) {
+		try {
+			path = Paths.get(url.toURI());
+		} catch (URISyntaxException e) {
+			System.out.println(e);
+		}
+		
+		try (BufferedReader buffer = Files.newBufferedReader(path)) {
 			String line;
 
 			while ((line = buffer.readLine()) != null) {
@@ -52,5 +64,5 @@ public class UsersList {
 
 	private static final UsersList instance = new UsersList();
 	private ArrayList<User> list = new ArrayList<>();
-	private static final String USER_LIST_PATH = "/Users.jsonl";
+	private static final String USER_LIST_FILENAME = "/Users.jsonl";
 }
