@@ -64,5 +64,5 @@ public class UsersList {
 
 	private static final UsersList instance = new UsersList();
 	private ArrayList<User> list = new ArrayList<>();
-	private static final String USER_LIST_FILENAME = "/Users.jsonl";
+	private static final String USER_LIST_FILENAME = "Users.jsonl";
 }
