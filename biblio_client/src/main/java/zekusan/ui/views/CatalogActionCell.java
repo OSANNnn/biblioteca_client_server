@@ -2,15 +2,24 @@ package zekusan.ui.views;
 
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.util.concurrent.ExecutionException;
+import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 import javax.swing.AbstractCellEditor;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
+import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+
+import zekusan.comms.responses.PrenotazioneResponse;
+import zekusan.enums.ItemType;
+import zekusan.enums.Status;
+import zekusan.services.LibraryClient;
 
 class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
     private static final long serialVersionUID = 1L;
@@ -18,44 +27,97 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
     private final JTable table;
     private final DefaultTableModel tableModel;
     private final JLabel statusLabel;
+    private final transient Supplier<ItemType> currentTypeSupplier;
+    private final transient LibraryClient libraryClient;
+    private final transient IntConsumer onSuccessfulBorrow;
 
     // Renderer components (non-interactive)
     private final JPanel renderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-    private final JButton renderFoo = new JButton("Foo");
-    private final JButton renderBar = new JButton("Bar");
+    private final JButton renderBorrow = new JButton("Richiedi prestito");
 
     // Editor components (interactive)
     private final JPanel editPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-    private final JButton editFoo = new JButton("Foo");
-    private final JButton editBar = new JButton("Bar");
+    private final JButton editBorrow = new JButton("Richiedi prestito");
 
-    CatalogActionCell(JTable table, DefaultTableModel tableModel, JLabel statusLabel) {
+    CatalogActionCell(
+            JTable table,
+            DefaultTableModel tableModel,
+            JLabel statusLabel,
+            Supplier<ItemType> currentTypeSupplier,
+            LibraryClient libraryClient,
+            IntConsumer onSuccessfulBorrow) {
         this.table = table;
         this.tableModel = tableModel;
         this.statusLabel = statusLabel;
+        this.currentTypeSupplier = currentTypeSupplier;
+        this.libraryClient = libraryClient;
+        this.onSuccessfulBorrow = onSuccessfulBorrow;
 
-        renderFoo.setFocusable(false);
-        renderBar.setFocusable(false);
-        renderPanel.add(renderFoo);
-        renderPanel.add(renderBar);
+        renderBorrow.setFocusable(false);
+        renderPanel.add(renderBorrow);
 
-        editPanel.add(editFoo);
-        editPanel.add(editBar);
+        editPanel.add(editBorrow);
 
-        editFoo.addActionListener(e -> handleAction("Foo"));
-        editBar.addActionListener(e -> handleAction("Bar"));
+        editBorrow.addActionListener(e -> handleBorrowAction());
     }
 
-    private void handleAction(String actionLabel) {
+    private void handleBorrowAction() {
         int viewRow = table.getEditingRow();
         if (viewRow < 0) {
             viewRow = table.getSelectedRow();
         }
 
         int modelRow = viewRow >= 0 ? table.convertRowIndexToModel(viewRow) : -1;
-        Object id = modelRow >= 0 ? tableModel.getValueAt(modelRow, 0) : "?";
+        if (modelRow < 0) {
+            statusLabel.setText("Seleziona un elemento per il prestito.");
+            fireEditingCanceled();
+            return;
+        }
 
-        statusLabel.setText(actionLabel + " su ID " + id);
+        Object idValue = tableModel.getValueAt(modelRow, 0);
+        if (!(idValue instanceof Number idNumber)) {
+            statusLabel.setText("ID non valido per il prestito.");
+            fireEditingCanceled();
+            return;
+        }
+
+        ItemType type = currentTypeSupplier.get();
+        if (type == null || type == ItemType.NONE) {
+            statusLabel.setText("Categoria non valida per il prestito.");
+            fireEditingCanceled();
+            return;
+        }
+
+        int itemId = idNumber.intValue();
+
+        statusLabel.setText("Richiesta prestito per ID " + itemId + "...");
+        editBorrow.setEnabled(false);
+
+        new SwingWorker<PrenotazioneResponse, Void>() {
+            @Override
+            protected PrenotazioneResponse doInBackground() throws Exception {
+                return libraryClient.prenota(itemId, type);
+            }
+
+            @Override
+            protected void done() {
+                editBorrow.setEnabled(true);
+                try {
+                    PrenotazioneResponse response = get();
+                    if (response.getStatus() == Status.SUCCESS) {
+                        statusLabel.setText("Prestito richiesto per ID " + itemId + ".");
+                        onSuccessfulBorrow.accept(modelRow);
+                    } else {
+                        statusLabel.setText("Impossibile richiedere prestito: " + response.getStatus());
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    statusLabel.setText("Richiesta prestito interrotta.");
+                } catch (ExecutionException e) {
+                    statusLabel.setText("Errore nella richiesta di prestito: " + e.getCause().getMessage());
+                }
+            }
+        }.execute();
 
         if (viewRow >= 0) {
             table.getSelectionModel().setSelectionInterval(viewRow, viewRow);

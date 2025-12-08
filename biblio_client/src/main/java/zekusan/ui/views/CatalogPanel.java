@@ -47,7 +47,7 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
         controls.add(refreshButton);
         controls.add(statusLabel);
 
-        catalogTable = new CatalogTable(statusLabel);
+        catalogTable = new CatalogTable(statusLabel, libraryClient);
         JScrollPane tableScroll = catalogTable.getScrollPane();
 
         ScrollablePage page = new ScrollablePage();

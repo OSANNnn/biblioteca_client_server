@@ -14,6 +14,7 @@ import zekusan.models.items.CD;
 import zekusan.models.items.Item;
 import zekusan.models.items.Libro;
 import zekusan.models.items.Rivista;
+import zekusan.services.LibraryClient;
 
 class CatalogTable {
     private final DefaultTableModel tableModel;
@@ -23,8 +24,9 @@ class CatalogTable {
 
     // Index of the "Azioni" column, depends on current layout
     private int actionsColumnIndex = 5;
+    private ItemType currentType = ItemType.NONE;
 
-    CatalogTable(JLabel statusLabel) {
+    CatalogTable(JLabel statusLabel, LibraryClient libraryClient) {
         tableModel = new DefaultTableModel(
                 new Object[] { "ID", "Titolo", "Quantita", "Tipo", "Dettagli", "Azioni" }, 0) {
             private static final long serialVersionUID = 1L;
@@ -47,7 +49,13 @@ class CatalogTable {
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setFillsViewportHeight(true);
 
-        actionsCell = new CatalogActionCell(table, tableModel, statusLabel);
+        actionsCell = new CatalogActionCell(
+                table,
+                tableModel,
+                statusLabel,
+                this::getCurrentType,
+                libraryClient,
+                this::decrementQuantity);
         table.setRowHeight(actionsCell.getPreferredHeight() + 2);
 
         scrollPane = new JScrollPane(
@@ -58,6 +66,7 @@ class CatalogTable {
 
     void configureColumnsForType(ItemType type) {
         String[] columns;
+        currentType = type;
 
         if (type == ItemType.LIBRO) {
             columns = new String[] { "ID", "Titolo", "Quantita", "Autore", "Genere", "ISBN", "Azioni" };
@@ -154,7 +163,34 @@ class CatalogTable {
         return scrollPane;
     }
 
+    ItemType getCurrentType() {
+        return currentType;
+    }
+
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private void decrementQuantity(int modelRow) {
+        Object qtyValue = tableModel.getValueAt(modelRow, 2);
+        int currentQty = toInt(qtyValue);
+        if (currentQty <= 0) {
+            return;
+        }
+        tableModel.setValueAt(currentQty - 1, modelRow, 2);
+    }
+
+    private int toInt(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String s) {
+            try {
+                return Integer.parseInt(s);
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
+        return 0;
     }
 }
