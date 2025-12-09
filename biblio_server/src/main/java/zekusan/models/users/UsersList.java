@@ -2,14 +2,12 @@ package zekusan.models.users;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import zekusan.app.systems.DataFiles;
 import zekusan.app.systems.Converter;
 
 
@@ -34,17 +32,10 @@ public class UsersList {
 
 	private void updateList() throws IOException {
 		String fileName = USER_LIST_FILENAME;
-		
-		ClassLoader cl = UsersList.class.getClassLoader();
-		URL url = cl.getResource("data/" + fileName);
-		Path path = null;
-		
-		try {
-			path = Paths.get(url.toURI());
-		} catch (URISyntaxException e) {
-			System.out.println(e);
-		}
-		
+
+		Path path = DataFiles.getDataFile(fileName);
+		list.clear();
+
 		try (BufferedReader buffer = Files.newBufferedReader(path)) {
 			String line;
 

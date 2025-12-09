@@ -6,11 +6,15 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.function.Consumer;
 
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -22,11 +26,15 @@ public class LoginPanel extends JPanel {
 		boolean handle(String username, String password, Consumer<String> onError);
 	}
 
+	private final transient LoginHandler loginHandler;
 	private final JTextField usernameField;
 	private final JPasswordField passField;
 	private final JLabel errorLabel;
+	private final JButton loginBtn;
 
 	public LoginPanel(LoginHandler onLogin) {
+		this.loginHandler = onLogin;
+
 		setLayout(new GridBagLayout());
 		var c = new GridBagConstraints();
 		c.insets = new Insets(6, 6, 6, 6);
@@ -57,17 +65,11 @@ public class LoginPanel extends JPanel {
 		usernameField.getDocument().addDocumentListener(errorListener);
 		passField.getDocument().addDocumentListener(errorListener);
 
-		var loginBtn = new JButton("Login");
-		loginBtn.addActionListener(event -> {
-			var username = usernameField.getText();
-			var password = new String(passField.getPassword());
+		loginBtn = new JButton("Login");
 
-			var loggedIn = onLogin.handle(username, password, msg -> errorLabel.setText(msg));
-
-			if (loggedIn) {
-				clearFields();
-			}
-		});
+		loginBtn.addActionListener(event -> doLogin());
+		usernameField.addActionListener(event -> doLogin());
+		passField.addActionListener(event -> doLogin());
 
 		c.gridx = 0;
 		c.gridy = 0;
@@ -95,5 +97,38 @@ public class LoginPanel extends JPanel {
 
 	private void clearError() {
 		errorLabel.setText(" ");
+	}
+
+	@Override
+	public void addNotify() {
+		super.addNotify();
+		SwingUtilities.invokeLater(() -> {
+			var rootPane = SwingUtilities.getRootPane(this);
+			if (rootPane != null) {
+				var inputMap = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+				var actionMap = rootPane.getActionMap();
+
+				inputMap.put(KeyStroke.getKeyStroke("ENTER"), "login");
+				actionMap.put("login", new AbstractAction() {
+					private static final long serialVersionUID = 1L;
+
+					@Override
+					public void actionPerformed(java.awt.event.ActionEvent e) {
+						doLogin();
+					}
+				});
+			}
+		});
+	}
+
+	private void doLogin() {
+		var username = usernameField.getText();
+		var password = new String(passField.getPassword());
+
+		var loggedIn = loginHandler.handle(username, password, errorLabel::setText);
+
+		if (loggedIn) {
+			clearFields();
+		}
 	}
 }

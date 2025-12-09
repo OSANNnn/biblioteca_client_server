@@ -3,11 +3,8 @@ package zekusan.app.systems;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,15 +30,7 @@ public class CatalogoGen {
 			throw new IOException("Invalid Item type");
 		}
 		
-		ClassLoader cl = CatalogoGen.class.getClassLoader();
-		URL url = cl.getResource("data/" + fileName);
-		Path path = null;
-		
-		try {
-			path = Paths.get(url.toURI());
-		} catch (URISyntaxException e) {
-			System.out.println(e);
-		}
+		Path path = DataFiles.getDataFile(fileName);
 
 		try (BufferedReader reader = Files.newBufferedReader(path)) {
 			String line;
@@ -65,16 +54,7 @@ public class CatalogoGen {
 			throw new IOException("Invalid Item type");
 		}
 		
-		ClassLoader cl = CatalogoGen.class.getClassLoader();
-		URL url = cl.getResource("data/" + fileName);
-		Path path = null;
-		
-		try {
-			path = Paths.get(url.toURI());
-		} catch (URISyntaxException e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
-		}
+		Path path = DataFiles.getDataFile(fileName);
 
 		try (BufferedWriter writer = Files.newBufferedWriter(path, 
                 StandardOpenOption.CREATE, 

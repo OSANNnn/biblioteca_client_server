@@ -19,6 +19,7 @@ bin/
 out/
 build/
 target/
+biblio_server/data/
 
 # Temporary files
 *.tmp
