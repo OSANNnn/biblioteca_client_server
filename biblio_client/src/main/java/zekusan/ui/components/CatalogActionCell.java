@@ -18,6 +18,7 @@ import javax.swing.table.TableCellRenderer;
 
 import zekusan.comms.responses.PrenotazioneResponse;
 import zekusan.enums.ItemType;
+import zekusan.enums.UserType;
 import zekusan.enums.Status;
 import zekusan.services.LibraryClient;
 
@@ -33,11 +34,11 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
 
     // Renderer components (non-interactive)
     private final JPanel renderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-    private final JButton renderBorrow = new JButton("Richiedi prestito");
+    private final JButton renderBorrow = new JButton();
 
     // Editor components (interactive)
     private final JPanel editPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-    private final JButton editBorrow = new JButton("Richiedi prestito");
+    private final JButton editBorrow = new JButton();
 
     CatalogActionCell(
             JTable table,
@@ -53,9 +54,11 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
         this.libraryClient = libraryClient;
         this.onSuccessfulBorrow = onSuccessfulBorrow;
 
+        renderBorrow.setText(buttonText());
         renderBorrow.setFocusable(false);
         renderPanel.add(renderBorrow);
 
+        editBorrow.setText(buttonText());
         editPanel.add(editBorrow);
 
         editBorrow.addActionListener(e -> handleBorrowAction());
@@ -89,6 +92,12 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
         }
 
         int itemId = idNumber.intValue();
+
+        if (isLibrarian()) {
+            statusLabel.setText("Funzione modifica non implementata.");
+            fireEditingStopped();
+            return;
+        }
 
         statusLabel.setText("Richiesta prestito per ID " + itemId + "...");
         editBorrow.setEnabled(false);
@@ -151,5 +160,16 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
 
     int getPreferredHeight() {
         return renderPanel.getPreferredSize().height;
+    }
+
+    private boolean isLibrarian() {
+        if (libraryClient == null || !libraryClient.isLoggedIn() || libraryClient.getSession() == null) {
+            return false;
+        }
+        return libraryClient.getSession().userType() != UserType.STUDENTE;
+    }
+
+    private String buttonText() {
+        return isLibrarian() ? "Modifica" : "Richiedi prestito";
     }
 }
