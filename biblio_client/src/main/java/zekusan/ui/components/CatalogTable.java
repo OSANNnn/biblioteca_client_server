@@ -26,7 +26,7 @@ public class CatalogTable {
     private int actionsColumnIndex = 5;
     private ItemType currentType = ItemType.NONE;
 
-    public CatalogTable(JLabel statusLabel, LibraryClient libraryClient) {
+    public CatalogTable(JLabel statusLabel, LibraryClient libraryClient, zekusan.interfaces.Navigator navigator) {
         tableModel = new DefaultTableModel(
                 new Object[] { "ID", "Titolo", "Quantita", "Tipo", "Dettagli", "Azioni" }, 0) {
             private static final long serialVersionUID = 1L;
@@ -55,6 +55,7 @@ public class CatalogTable {
                 statusLabel,
                 this::getCurrentType,
                 libraryClient,
+                navigator,
                 this::decrementQuantity);
         table.setRowHeight(actionsCell.getPreferredHeight() + 2);
 

@@ -18,6 +18,7 @@ import zekusan.comms.responses.CatalogoResponse;
 import zekusan.comms.responses.LoginResponse;
 import zekusan.comms.responses.PrenotazioneResponse;
 import zekusan.comms.responses.Response;
+import zekusan.models.items.Item;
 import zekusan.models.loans.LoanInfo;
 import zekusan.models.loans.PendingLoanInfo;
 import zekusan.models.items.Item;
@@ -117,6 +118,14 @@ public class ApiClient {
 	public synchronized boolean cancelPendingBorrow(int token, String username, int requestId) {
 		return mockPending.removeIf(req ->
 				req.getId() == requestId && username != null && username.equalsIgnoreCase(req.getBorrower()));
+	}
+
+	public Item updateItem(int token, String username, Item item) throws IOException {
+		if (item == null) {
+			throw new IOException("Item non valido");
+		}
+		System.out.println("[MOCK] Aggiornamento item richiesto da " + username + ": " + Converter.objectToJson(item));
+		return item;
 	}
 
 	private CatalogoResponse sendCatalogo(CatalogoRequest request) throws IOException {

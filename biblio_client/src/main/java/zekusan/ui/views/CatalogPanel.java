@@ -18,6 +18,7 @@ import javax.swing.SwingWorker;
 import zekusan.comms.responses.CatalogoResponse;
 import zekusan.enums.ItemType;
 import zekusan.enums.Status;
+import zekusan.interfaces.Navigator;
 import zekusan.interfaces.PanelLifecycle;
 import zekusan.services.LibraryClient;
 import zekusan.ui.components.CatalogTable;
@@ -28,14 +29,16 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
     private static final long serialVersionUID = 1L;
 
     private final transient LibraryClient libraryClient;
+    private final transient Navigator navigator;
     private final JComboBox<ItemType> categorySelect;
     private final JLabel statusLabel;
     private final JButton refreshButton;
     private final transient CatalogTable catalogTable;
 
-    public CatalogPanel(LibraryClient libraryClient) {
+    public CatalogPanel(LibraryClient libraryClient, Navigator navigator) {
         super(new BorderLayout(8, 8));
         this.libraryClient = libraryClient;
+        this.navigator = navigator;
 
         categorySelect = new JComboBox<>(new ItemType[] { ItemType.LIBRO, ItemType.CD, ItemType.RIVISTA });
         refreshButton = new JButton("Aggiorna catalogo");
@@ -47,7 +50,7 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
         controls.add(refreshButton);
         controls.add(statusLabel);
 
-        catalogTable = new CatalogTable(statusLabel, libraryClient);
+        catalogTable = new CatalogTable(statusLabel, libraryClient, navigator);
         JScrollPane tableScroll = catalogTable.getScrollPane();
 
         ScrollablePanel page = new ScrollablePanel();

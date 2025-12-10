@@ -11,11 +11,13 @@ import zekusan.comms.responses.LoginResponse;
 import zekusan.comms.responses.PrenotazioneResponse;
 import zekusan.models.loans.LoanInfo;
 import zekusan.models.loans.PendingLoanInfo;
+import zekusan.models.items.Item;
 import zekusan.net.ApiClient;
 
 public class LibraryClient {
 	private final ApiClient apiClient;
 	private Session session;
+	private transient Item pendingEditItem;
 
 	public LibraryClient(ApiClient apiClient) {
 		this.apiClient = apiClient;
@@ -96,6 +98,21 @@ public class LibraryClient {
 	public boolean cancelBorrowRequest(int requestId) throws IOException {
 		ensureLoggedIn();
 		return apiClient.cancelPendingBorrow(session.token(), session.username(), requestId);
+	}
+
+	public Item updateItem(Item item) throws IOException {
+		ensureLoggedIn();
+		return apiClient.updateItem(session.token(), session.username(), item);
+	}
+
+	public void setPendingEditItem(Item item) {
+		this.pendingEditItem = item;
+	}
+
+	public Item consumePendingEditItem() {
+		Item item = this.pendingEditItem;
+		this.pendingEditItem = null;
+		return item;
 	}
 
 	private void ensureLoggedIn() {

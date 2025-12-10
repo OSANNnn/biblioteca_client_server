@@ -20,7 +20,13 @@ import zekusan.comms.responses.PrenotazioneResponse;
 import zekusan.enums.ItemType;
 import zekusan.enums.UserType;
 import zekusan.enums.Status;
+import zekusan.interfaces.Navigator;
+import zekusan.enums.Route;
 import zekusan.services.LibraryClient;
+import zekusan.models.items.CD;
+import zekusan.models.items.Item;
+import zekusan.models.items.Libro;
+import zekusan.models.items.Rivista;
 
 class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
     private static final long serialVersionUID = 1L;
@@ -30,6 +36,7 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
     private final JLabel statusLabel;
     private final transient Supplier<ItemType> currentTypeSupplier;
     private final transient LibraryClient libraryClient;
+    private final transient Navigator navigator;
     private final transient IntConsumer onSuccessfulBorrow;
 
     // Renderer components (non-interactive)
@@ -46,12 +53,14 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
             JLabel statusLabel,
             Supplier<ItemType> currentTypeSupplier,
             LibraryClient libraryClient,
+            Navigator navigator,
             IntConsumer onSuccessfulBorrow) {
         this.table = table;
         this.tableModel = tableModel;
         this.statusLabel = statusLabel;
         this.currentTypeSupplier = currentTypeSupplier;
         this.libraryClient = libraryClient;
+        this.navigator = navigator;
         this.onSuccessfulBorrow = onSuccessfulBorrow;
 
         renderBorrow.setText(buttonText());
@@ -94,8 +103,8 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
         int itemId = idNumber.intValue();
 
         if (isLibrarian()) {
-            statusLabel.setText("Funzione modifica non implementata.");
-            fireEditingStopped();
+            statusLabel.setText("Modifica elemento...");
+            openEditPanel(modelRow, type);
             return;
         }
 
@@ -171,5 +180,85 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
 
     private String buttonText() {
         return isLibrarian() ? "Modifica" : "Richiedi prestito";
+    }
+
+    private void openEditPanel(int modelRow, ItemType type) {
+        Item item = extractItem(modelRow, type);
+        libraryClient.setPendingEditItem(item);
+        if (navigator != null) {
+            navigator.navigate(Route.LIBRARIAN_EDIT_ITEM);
+        }
+        fireEditingStopped();
+    }
+
+    private Item extractItem(int modelRow, ItemType type) {
+        Object idVal = tableModel.getValueAt(modelRow, 0);
+        int id = idVal instanceof Number n ? n.intValue() : -1;
+        Item item;
+        if (type == ItemType.LIBRO) {
+            Libro libro = new Libro();
+            libro.setAutore(toStr(tableModel.getValueAt(modelRow, 3)));
+            libro.setGenere(toStr(tableModel.getValueAt(modelRow, 4)));
+            libro.setIsbn(toStr(tableModel.getValueAt(modelRow, 5)));
+            item = libro;
+        } else if (type == ItemType.CD) {
+            CD cd = new CD();
+            cd.setArtista(toStr(tableModel.getValueAt(modelRow, 3)));
+            cd.setGenere(toStr(tableModel.getValueAt(modelRow, 4)));
+            item = cd;
+        } else if (type == ItemType.RIVISTA) {
+            Rivista rivista = new Rivista();
+            rivista.setAnno(toInt(tableModel.getValueAt(modelRow, 3)));
+            rivista.setNumero(toInt(tableModel.getValueAt(modelRow, 4)));
+            item = rivista;
+        } else {
+            item = new Item();
+            item.setTipo(type);
+        }
+
+        item.setId(id);
+        item.setTitolo(toStr(tableModel.getValueAt(modelRow, 1)));
+        item.setQuantita(toInt(tableModel.getValueAt(modelRow, 2)));
+        item.setTipo(type);
+        return item;
+    }
+
+    private void updateTableRow(int modelRow, Item item) {
+        tableModel.setValueAt(item.getTitolo(), modelRow, 1);
+        tableModel.setValueAt(item.getQuantita(), modelRow, 2);
+
+        if (item instanceof Libro libro) {
+            tableModel.setValueAt(nullToEmpty(libro.getAutore()), modelRow, 3);
+            tableModel.setValueAt(nullToEmpty(libro.getGenere()), modelRow, 4);
+            tableModel.setValueAt(nullToEmpty(libro.getIsbn()), modelRow, 5);
+        } else if (item instanceof CD cd) {
+            tableModel.setValueAt(nullToEmpty(cd.getArtista()), modelRow, 3);
+            tableModel.setValueAt(nullToEmpty(cd.getGenere()), modelRow, 4);
+        } else if (item instanceof Rivista rivista) {
+            tableModel.setValueAt(rivista.getAnno(), modelRow, 3);
+            tableModel.setValueAt(rivista.getNumero(), modelRow, 4);
+        }
+    }
+
+    private String toStr(Object value) {
+        return value == null ? "" : value.toString();
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private int toInt(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String s) {
+            try {
+                return Integer.parseInt(s.trim());
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
+        return 0;
     }
 }
