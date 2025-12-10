@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -29,9 +30,12 @@ public class StudentDashboardPanel extends JPanel implements PanelLifecycle {
 
 	private final transient LibraryClient libraryClient;
 	private final JLabel greetingLabel;
-	private final JLabel statusLabel;
+	private final JLabel borrowedStatusLabel;
+	private final JLabel pendingStatusLabel;
 	private final BorrowedTable borrowedTable;
 	private final PendingBorrowTable pendingBorrowTable;
+	private final JButton refreshBorrowedButton;
+	private final JButton refreshPendingButton;
 
 	public StudentDashboardPanel(LibraryClient libraryClient) {
 		super(new BorderLayout(8, 8));
@@ -39,10 +43,11 @@ public class StudentDashboardPanel extends JPanel implements PanelLifecycle {
 
 		greetingLabel = new JLabel(" ", SwingConstants.LEFT);
 		greetingLabel.setFont(greetingLabel.getFont().deriveFont(Font.BOLD, greetingLabel.getFont().getSize2D() + 2));
-		statusLabel = new JLabel(" ");
+		borrowedStatusLabel = new JLabel(" ");
+		pendingStatusLabel = new JLabel(" ");
 
-		borrowedTable = new BorrowedTable(libraryClient, this::setStatusMessage);
-		pendingBorrowTable = new PendingBorrowTable(libraryClient, this::setStatusMessage);
+		borrowedTable = new BorrowedTable(libraryClient, this::setBorrowedStatusMessage);
+		pendingBorrowTable = new PendingBorrowTable(libraryClient, this::setPendingStatusMessage);
 		int preferredRowHeight = Math.max(
 				borrowedTable.getPreferredRowHeight(),
 				pendingBorrowTable.getPreferredRowHeight());
@@ -51,6 +56,11 @@ public class StudentDashboardPanel extends JPanel implements PanelLifecycle {
 
 		JScrollPane borrowedScroll = borrowedTable.getScrollPane();
 		JScrollPane pendingScroll = pendingBorrowTable.getScrollPane();
+
+		refreshBorrowedButton = new JButton("Aggiorna");
+		refreshPendingButton = new JButton("Aggiorna");
+		refreshBorrowedButton.addActionListener(e -> loadData());
+		refreshPendingButton.addActionListener(e -> loadData());
 
 		ScrollablePanel content = new ScrollablePanel();
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -64,22 +74,19 @@ public class StudentDashboardPanel extends JPanel implements PanelLifecycle {
 		content.add(greetingLabel, gbc);
 
 		gbc.gridy = 1;
-		content.add(statusLabel, gbc);
+		content.add(sectionHeader("Prestiti attivi", refreshBorrowedButton, borrowedStatusLabel), gbc);
 
 		gbc.gridy = 2;
-		content.add(sectionLabel("Prestiti attivi"), gbc);
-
-		gbc.gridy = 3;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.weighty = 0.5;
 		content.add(wrapTable(borrowedScroll), gbc);
 
-		gbc.gridy = 4;
+		gbc.gridy = 3;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.weighty = 0;
-		content.add(sectionLabel("Richieste in attesa"), gbc);
+		content.add(sectionHeader("Richieste in attesa", refreshPendingButton, pendingStatusLabel), gbc);
 
-		gbc.gridy = 5;
+		gbc.gridy = 4;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.weighty = 0.5;
 		content.add(wrapTable(pendingScroll), gbc);
@@ -99,7 +106,8 @@ public class StudentDashboardPanel extends JPanel implements PanelLifecycle {
 	public void onShow() {
 		if (!libraryClient.isLoggedIn()) {
 			greetingLabel.setText("Accedi per iniziare.");
-			setStatusMessage(" ");
+			setBorrowedStatusMessage(" ");
+			setPendingStatusMessage(" ");
 			borrowedTable.clearRows();
 			pendingBorrowTable.clearRows();
 			return;
@@ -116,9 +124,11 @@ public class StudentDashboardPanel extends JPanel implements PanelLifecycle {
 	}
 
 	private void loadData() {
-		setStatusMessage("Caricamento prestiti in corso...");
+		setBorrowedStatusMessage("Caricamento prestiti in corso...");
+		setPendingStatusMessage("Caricamento in corso...");
 		borrowedTable.clearRows();
 		pendingBorrowTable.clearRows();
+		setRefreshEnabled(false);
 
 		new SwingWorker<BorrowSnapshot, Void>() {
 			@Override
@@ -134,34 +144,52 @@ public class StudentDashboardPanel extends JPanel implements PanelLifecycle {
 					BorrowSnapshot data = get();
 					borrowedTable.setRows(data.borrowed());
 					pendingBorrowTable.setRows(data.pending());
-					setStatusMessage("Dati aggiornati.");
+					setBorrowedStatusMessage("Dati aggiornati.");
+					setPendingStatusMessage("Dati aggiornati.");
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
-					setStatusMessage("Caricamento interrotto.");
+					setBorrowedStatusMessage("Caricamento interrotto.");
+					setPendingStatusMessage("Caricamento interrotto.");
 					borrowedTable.clearRows();
 					pendingBorrowTable.clearRows();
 				} catch (ExecutionException e) {
-					setStatusMessage("Errore nel caricamento: " + e.getCause().getMessage());
+					setBorrowedStatusMessage("Errore: " + e.getCause().getMessage());
+					setPendingStatusMessage("Errore: " + e.getCause().getMessage());
 					borrowedTable.clearRows();
 					pendingBorrowTable.clearRows();
+				} finally {
+					setRefreshEnabled(true);
 				}
 			}
 		}.execute();
 	}
 
-	private void setStatusMessage(String message) {
-		statusLabel.setText(message == null || message.isBlank() ? " " : message);
+	private void setBorrowedStatusMessage(String message) {
+		borrowedStatusLabel.setText(message == null || message.isBlank() ? " " : message);
 	}
 
-	private JLabel sectionLabel(String text) {
+	private void setPendingStatusMessage(String message) {
+		pendingStatusLabel.setText(message == null || message.isBlank() ? " " : message);
+	}
+
+	private JPanel sectionHeader(String text, JButton refreshButton, JLabel statusLabel) {
+		JPanel panel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
 		JLabel label = new JLabel(text);
 		label.setFont(label.getFont().deriveFont(Font.BOLD));
-		return label;
+		panel.add(label);
+		panel.add(refreshButton);
+		panel.add(statusLabel);
+		return panel;
 	}
 
 	private JComponent wrapTable(JScrollPane tableScroll) {
 		tableScroll.setBorder(BorderFactory.createLineBorder(tableScroll.getBackground().darker(), 1));
 		return tableScroll;
+	}
+
+	private void setRefreshEnabled(boolean enabled) {
+		refreshBorrowedButton.setEnabled(enabled);
+		refreshPendingButton.setEnabled(enabled);
 	}
 
 	private record BorrowSnapshot(List<LoanInfo> borrowed, List<PendingLoanInfo> pending) {
