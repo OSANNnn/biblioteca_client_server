@@ -22,7 +22,7 @@ import zekusan.ui.views.LoginPanel;
 import zekusan.ui.views.NotFoundPanel;
 import zekusan.ui.views.SettingsPanel;
 import zekusan.ui.views.StudentDashboardPanel;
-import zekusan.ui.views.ItemEditPanel;
+import zekusan.ui.views.ItemPanel;
 
 public class AppFrame extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -51,7 +51,7 @@ public class AppFrame extends JFrame {
 		router.register(Route.LIBRARIAN_CATALOG,
 				() -> new PanelWithNav(new CatalogPanel(libraryClient, router), new LibrarianNavBar(router)));
 		router.register(Route.LIBRARIAN_EDIT_ITEM,
-				() -> new PanelWithNav(new ItemEditPanel(libraryClient, router), new LibrarianNavBar(router)));
+				() -> new PanelWithNav(new ItemPanel(libraryClient, router), new LibrarianNavBar(router)));
 		router.register(Route.LIBRARIAN_SETTINGS,
 				() -> new PanelWithNav(new SettingsPanel(libraryClient, router), new LibrarianNavBar(router)));
 		router.register(Route.NOT_FOUND, NotFoundPanel::new);

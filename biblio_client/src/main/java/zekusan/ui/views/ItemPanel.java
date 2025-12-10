@@ -34,7 +34,7 @@ import zekusan.models.items.Libro;
 import zekusan.models.items.Rivista;
 import zekusan.services.LibraryClient;
 
-public class ItemEditPanel extends JPanel implements PanelLifecycle {
+public class ItemPanel extends JPanel implements PanelLifecycle {
 	private static final long serialVersionUID = 1L;
 
 	private static final int LABEL_COLUMN_WIDTH = 90;
@@ -58,7 +58,7 @@ public class ItemEditPanel extends JPanel implements PanelLifecycle {
 	private ItemType type = ItemType.NONE;
 	private Item baseItem;
 
-	public ItemEditPanel(LibraryClient libraryClient, Navigator navigator) {
+	public ItemPanel(LibraryClient libraryClient, Navigator navigator) {
 		super(new GridBagLayout());
 		this.libraryClient = libraryClient;
 		this.navigator = navigator;
