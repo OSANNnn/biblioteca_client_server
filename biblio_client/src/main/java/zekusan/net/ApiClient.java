@@ -1,6 +1,7 @@
 package zekusan.net;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,13 +18,20 @@ import zekusan.comms.responses.CatalogoResponse;
 import zekusan.comms.responses.LoginResponse;
 import zekusan.comms.responses.PrenotazioneResponse;
 import zekusan.comms.responses.Response;
+import zekusan.models.loans.LoanInfo;
+import zekusan.models.loans.PendingLoanInfo;
 import zekusan.models.items.Item;
 
 public class ApiClient {
 	private final SocketClient socketClient;
+	private final List<LoanInfo> mockLoaned = new ArrayList<>();
+	private final List<PendingLoanInfo> mockPending = new ArrayList<>();
+	private int nextLoanId = 1000;
+	private int nextRequestId = 2000;
 
 	public ApiClient(SocketClient socketClient) {
 		this.socketClient = socketClient;
+		seedMockLoans();
 	}
 
 	public LoginResponse login(String username, String password) throws IOException {
@@ -41,6 +49,48 @@ public class ApiClient {
 		request.setToken(token);
 		request.setUsername(username);
 		return send(ActionType.PRENOTAZIONE, request, PrenotazioneResponse.class);
+	}
+
+	public synchronized List<LoanInfo> fetchLoanedItems(int token, String username) {
+		return mockLoaned.stream()
+				.map(ApiClient::copyLoan)
+				.toList();
+	}
+
+	public synchronized List<PendingLoanInfo> fetchPendingLoans(int token, String username) {
+		return mockPending.stream()
+				.map(ApiClient::copyPending)
+				.toList();
+	}
+
+	public synchronized LoanInfo acceptPendingLoan(int token, String username, int requestId) throws IOException {
+		PendingLoanInfo pending = mockPending.stream()
+				.filter(req -> req.getId() == requestId)
+				.findFirst()
+				.orElse(null);
+
+		if (pending == null) {
+			throw new IOException("Richiesta non trovata.");
+		}
+
+		mockPending.remove(pending);
+
+		LocalDate baseDate = pending.getRequestedOn() != null ? pending.getRequestedOn() : LocalDate.now();
+		LoanInfo loan = new LoanInfo(
+				nextLoanId(),
+				pending.getItemId(),
+				pending.getItemName(),
+				pending.getCategory(),
+				pending.getBorrower(),
+				pending.getRequestedOn(),
+				baseDate.plusDays(14));
+
+		mockLoaned.add(loan);
+		return copyLoan(loan);
+	}
+
+	public synchronized boolean cancelPendingLoan(int token, String username, int requestId) {
+		return mockPending.removeIf(req -> req.getId() == requestId);
 	}
 
 	private CatalogoResponse sendCatalogo(CatalogoRequest request) throws IOException {
@@ -151,4 +201,59 @@ public class ApiClient {
 	}
 
 	private static final char SEPARATOR = '|';
+
+	private void seedMockLoans() {
+		if (!mockLoaned.isEmpty() || !mockPending.isEmpty()) {
+			return;
+		}
+
+		LocalDate today = LocalDate.now();
+
+		mockLoaned.add(new LoanInfo(nextLoanId(), 1, "Il Visconte Dimezzato", ItemType.LIBRO, "alice",
+				today.minusDays(3), today.plusDays(11)));
+		mockLoaned.add(new LoanInfo(nextLoanId(), 7, "Kind of Blue", ItemType.CD, "bruno",
+				today.minusDays(5), today.plusDays(9)));
+
+		mockPending.add(new PendingLoanInfo(nextRequestId(), 4, "Neuromancer", ItemType.LIBRO, "carla",
+				today.minusDays(1)));
+		mockPending.add(new PendingLoanInfo(nextRequestId(), 9, "National Geographic 2022/12", ItemType.RIVISTA,
+				"elena", today.minusDays(2)));
+		mockPending.add(new PendingLoanInfo(nextRequestId(), 2, "Random Access Memories", ItemType.CD, "dario",
+				today.minusDays(4)));
+	}
+
+	private int nextLoanId() {
+		return ++nextLoanId;
+	}
+
+	private int nextRequestId() {
+		return ++nextRequestId;
+	}
+
+	private static LoanInfo copyLoan(LoanInfo loan) {
+		if (loan == null) {
+			return null;
+		}
+		return new LoanInfo(
+				loan.getId(),
+				loan.getItemId(),
+				loan.getItemName(),
+				loan.getCategory(),
+				loan.getBorrower(),
+				loan.getRequestedOn(),
+				loan.getDueDate());
+	}
+
+	private static PendingLoanInfo copyPending(PendingLoanInfo pending) {
+		if (pending == null) {
+			return null;
+		}
+		return new PendingLoanInfo(
+				pending.getId(),
+				pending.getItemId(),
+				pending.getItemName(),
+				pending.getCategory(),
+				pending.getBorrower(),
+				pending.getRequestedOn());
+	}
 }

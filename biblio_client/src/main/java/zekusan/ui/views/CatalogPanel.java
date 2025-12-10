@@ -4,16 +4,13 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.event.MouseWheelEvent;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoundedRangeModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingWorker;
@@ -25,6 +22,7 @@ import zekusan.interfaces.PanelLifecycle;
 import zekusan.services.LibraryClient;
 import zekusan.ui.components.CatalogTable;
 import zekusan.ui.components.ScrollablePanel;
+import zekusan.ui.components.ScrollUtil;
 
 public class CatalogPanel extends JPanel implements PanelLifecycle {
     private static final long serialVersionUID = 1L;
@@ -73,7 +71,7 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
                 page,
                 ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        enableEdgeWheelPropagation(tableScroll, outerScroll);
+        ScrollUtil.enableEdgeWheelPropagation(tableScroll, outerScroll);
         outerScroll.getVerticalScrollBar().setUnitIncrement(16);
         outerScroll.getVerticalScrollBar().setBlockIncrement(240);
         outerScroll.setBorder(BorderFactory.createEmptyBorder());
@@ -144,45 +142,4 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
         }.execute();
     }
 
-    private void enableEdgeWheelPropagation(JScrollPane inner, JScrollPane outer) {
-        inner.addMouseWheelListener(e -> {
-            if (e.isShiftDown()) {
-                return;
-            }
-
-            JScrollBar verticalBar = inner.getVerticalScrollBar();
-            if (verticalBar == null || !verticalBar.isVisible()) {
-                return;
-            }
-
-            BoundedRangeModel model = verticalBar.getModel();
-            int value = model.getValue();
-            int extent = model.getExtent();
-            int min = model.getMinimum();
-            int max = model.getMaximum();
-
-            boolean atTop = value <= min;
-            boolean atBottom = value + extent >= max;
-
-            int direction = e.getWheelRotation() > 0 ? 1 : -1;
-            boolean shouldBubbleUp = (direction < 0 && atTop) || (direction > 0 && atBottom);
-
-            if (shouldBubbleUp) {
-                MouseWheelEvent forwarded = new MouseWheelEvent(
-                        outer,
-                        e.getID(),
-                        e.getWhen(),
-                        e.getModifiersEx(),
-                        e.getX(),
-                        e.getY(),
-                        e.getClickCount(),
-                        e.isPopupTrigger(),
-                        e.getScrollType(),
-                        e.getScrollAmount(),
-                        e.getWheelRotation());
-                outer.dispatchEvent(forwarded);
-                e.consume();
-            }
-        });
-    }
 }

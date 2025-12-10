@@ -1,6 +1,7 @@
 package zekusan.services;
 
 import java.io.IOException;
+import java.util.List;
 
 import zekusan.enums.ItemType;
 import zekusan.enums.Status;
@@ -8,6 +9,8 @@ import zekusan.enums.UserType;
 import zekusan.comms.responses.CatalogoResponse;
 import zekusan.comms.responses.LoginResponse;
 import zekusan.comms.responses.PrenotazioneResponse;
+import zekusan.models.loans.LoanInfo;
+import zekusan.models.loans.PendingLoanInfo;
 import zekusan.net.ApiClient;
 
 public class LibraryClient {
@@ -53,5 +56,31 @@ public class LibraryClient {
 			throw new IllegalStateException("Session is not valid");
 		}
 		return apiClient.prenota(session.token(), session.username(), itemId, type);
+	}
+
+	public List<LoanInfo> loadLoanedItems() throws IOException {
+		ensureLoggedIn();
+		return apiClient.fetchLoanedItems(session.token(), session.username());
+	}
+
+	public List<PendingLoanInfo> loadPendingLoans() throws IOException {
+		ensureLoggedIn();
+		return apiClient.fetchPendingLoans(session.token(), session.username());
+	}
+
+	public LoanInfo acceptPendingLoan(int requestId) throws IOException {
+		ensureLoggedIn();
+		return apiClient.acceptPendingLoan(session.token(), session.username(), requestId);
+	}
+
+	public boolean cancelPendingLoan(int requestId) throws IOException {
+		ensureLoggedIn();
+		return apiClient.cancelPendingLoan(session.token(), session.username(), requestId);
+	}
+
+	private void ensureLoggedIn() {
+		if (!isLoggedIn()) {
+			throw new IllegalStateException("Session is not valid");
+		}
 	}
 }
