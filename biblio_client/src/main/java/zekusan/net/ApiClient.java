@@ -19,16 +19,20 @@ import zekusan.comms.responses.LoginResponse;
 import zekusan.comms.responses.PrenotazioneResponse;
 import zekusan.comms.responses.Response;
 import zekusan.models.items.Item;
+import zekusan.models.items.CD;
+import zekusan.models.items.Libro;
+import zekusan.models.items.Rivista;
 import zekusan.models.loans.LoanInfo;
 import zekusan.models.loans.PendingLoanInfo;
-import zekusan.models.items.Item;
 
 public class ApiClient {
 	private final SocketClient socketClient;
 	private final List<LoanInfo> mockLoaned = new ArrayList<>();
 	private final List<PendingLoanInfo> mockPending = new ArrayList<>();
+	private final List<Item> mockCatalog = new ArrayList<>();
 	private int nextLoanId = 1000;
 	private int nextRequestId = 2000;
+	private int nextCatalogId = 3000;
 
 	public ApiClient(SocketClient socketClient) {
 		this.socketClient = socketClient;
@@ -42,7 +46,9 @@ public class ApiClient {
 
 	public CatalogoResponse fetchCatalogo(int token, String username, ItemType categoria) throws IOException {
 		CatalogoRequest request = new CatalogoRequest(token, username, categoria);
-		return sendCatalogo(request);
+		CatalogoResponse response = sendCatalogo(request);
+		response.setCatalogo(mergeWithMockCatalog(response.getCatalogo(), categoria));
+		return response;
 	}
 
 	public PrenotazioneResponse prenota(int token, String username, int itemId, ItemType type) throws IOException {
@@ -120,12 +126,34 @@ public class ApiClient {
 				req.getId() == requestId && username != null && username.equalsIgnoreCase(req.getBorrower()));
 	}
 
-	public Item updateItem(int token, String username, Item item) throws IOException {
-		if (item == null) {
+	public synchronized Item addItem(int token, String username, Item item) throws IOException {
+		Item toStore = copyItem(item);
+		if (toStore == null) {
 			throw new IOException("Item non valido");
 		}
-		System.out.println("[MOCK] Aggiornamento item richiesto da " + username + ": " + Converter.objectToJson(item));
-		return item;
+		if (toStore.getId() <= 0) {
+			toStore.setId(nextCatalogItemId());
+		}
+		ensureItemType(toStore);
+		mockCatalog.removeIf(existing -> existing.getId() == toStore.getId());
+		mockCatalog.add(copyItem(toStore));
+		logMockAction("Aggiunta", username, toStore);
+		return copyItem(toStore);
+	}
+
+	public synchronized Item updateItem(int token, String username, Item item) throws IOException {
+		Item updated = copyItem(item);
+		if (updated == null) {
+			throw new IOException("Item non valido");
+		}
+		if (updated.getId() <= 0) {
+			updated.setId(nextCatalogItemId());
+		}
+		ensureItemType(updated);
+		mockCatalog.removeIf(existing -> existing.getId() == updated.getId());
+		mockCatalog.add(copyItem(updated));
+		logMockAction("Aggiornamento", username, updated);
+		return copyItem(updated);
 	}
 
 	private CatalogoResponse sendCatalogo(CatalogoRequest request) throws IOException {
@@ -237,6 +265,31 @@ public class ApiClient {
 
 	private static final char SEPARATOR = '|';
 
+	private List<Item> mergeWithMockCatalog(List<Item> catalogo, ItemType categoria) {
+		List<Item> result = new ArrayList<>();
+		if (catalogo != null) {
+			for (Item item : catalogo) {
+				Item copy = copyItem(item);
+				if (copy != null) {
+					result.add(copy);
+				}
+			}
+		}
+
+		ItemType filter = categoria == null ? ItemType.NONE : categoria;
+		synchronized (this) {
+			for (Item item : mockCatalog) {
+				if (filter == ItemType.NONE || item.getTipo() == filter) {
+					Item copy = copyItem(item);
+					if (copy != null) {
+						result.add(copy);
+					}
+				}
+			}
+		}
+		return result;
+	}
+
 	private void seedMockLoans() {
 		if (!mockLoaned.isEmpty() || !mockPending.isEmpty()) {
 			return;
@@ -265,6 +318,10 @@ public class ApiClient {
 		return ++nextRequestId;
 	}
 
+	private int nextCatalogItemId() {
+		return ++nextCatalogId;
+	}
+
 	private static LoanInfo copyLoan(LoanInfo loan) {
 		if (loan == null) {
 			return null;
@@ -290,6 +347,72 @@ public class ApiClient {
 				pending.getCategory(),
 				pending.getBorrower(),
 				pending.getRequestedOn());
+	}
+
+	private static Item copyItem(Item item) {
+		if (item == null) {
+			return null;
+		}
+		if (item instanceof Libro libro) {
+			Libro copy = new Libro();
+			copy.setId(libro.getId());
+			copy.setTitolo(libro.getTitolo());
+			copy.setQuantita(libro.getQuantita());
+			copy.setAutore(libro.getAutore());
+			copy.setGenere(libro.getGenere());
+			copy.setIsbn(libro.getIsbn());
+			return copy;
+		}
+		if (item instanceof CD cd) {
+			CD copy = new CD();
+			copy.setId(cd.getId());
+			copy.setTitolo(cd.getTitolo());
+			copy.setQuantita(cd.getQuantita());
+			copy.setArtista(cd.getArtista());
+			copy.setGenere(cd.getGenere());
+			return copy;
+		}
+		if (item instanceof Rivista rivista) {
+			Rivista copy = new Rivista();
+			copy.setId(rivista.getId());
+			copy.setTitolo(rivista.getTitolo());
+			copy.setQuantita(rivista.getQuantita());
+			copy.setAnno(rivista.getAnno());
+			copy.setNumero(rivista.getNumero());
+			return copy;
+		}
+		Item copy = new Item();
+		copy.setId(item.getId());
+		copy.setTitolo(item.getTitolo());
+		copy.setQuantita(item.getQuantita());
+		copy.setTipo(item.getTipo());
+		return copy;
+	}
+
+	private void ensureItemType(Item item) {
+		if (item == null) {
+			return;
+		}
+		if (item.getTipo() != null && item.getTipo() != ItemType.NONE) {
+			return;
+		}
+		if (item instanceof Libro) {
+			item.setTipo(ItemType.LIBRO);
+		} else if (item instanceof CD) {
+			item.setTipo(ItemType.CD);
+		} else if (item instanceof Rivista) {
+			item.setTipo(ItemType.RIVISTA);
+		} else {
+			item.setTipo(ItemType.NONE);
+		}
+	}
+
+	private void logMockAction(String prefix, String username, Item item) {
+		try {
+			System.out.println("[MOCK] " + prefix + " item richiesto da " + username + ": " + Converter.objectToJson(item));
+		} catch (JacksonException e) {
+			System.out.println("[MOCK] " + prefix + " item richiesto da " + username + ": " + item);
+		}
 	}
 
 	private void ensureUserSamples(String username) {

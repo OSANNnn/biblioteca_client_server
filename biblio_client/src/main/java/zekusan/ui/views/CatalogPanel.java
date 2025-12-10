@@ -17,13 +17,19 @@ import javax.swing.SwingWorker;
 
 import zekusan.comms.responses.CatalogoResponse;
 import zekusan.enums.ItemType;
+import zekusan.enums.Route;
 import zekusan.enums.Status;
+import zekusan.enums.UserType;
 import zekusan.interfaces.Navigator;
 import zekusan.interfaces.PanelLifecycle;
 import zekusan.services.LibraryClient;
 import zekusan.ui.components.CatalogTable;
 import zekusan.ui.components.ScrollablePanel;
 import zekusan.ui.components.ScrollUtil;
+import zekusan.models.items.CD;
+import zekusan.models.items.Item;
+import zekusan.models.items.Libro;
+import zekusan.models.items.Rivista;
 
 public class CatalogPanel extends JPanel implements PanelLifecycle {
     private static final long serialVersionUID = 1L;
@@ -33,6 +39,7 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
     private final JComboBox<ItemType> categorySelect;
     private final JLabel statusLabel;
     private final JButton refreshButton;
+    private final JButton addButton;
     private final transient CatalogTable catalogTable;
 
     public CatalogPanel(LibraryClient libraryClient, Navigator navigator) {
@@ -42,12 +49,14 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
 
         categorySelect = new JComboBox<>(new ItemType[] { ItemType.LIBRO, ItemType.CD, ItemType.RIVISTA });
         refreshButton = new JButton("Aggiorna catalogo");
+        addButton = new JButton("Aggiungi elemento");
         statusLabel = new JLabel(" ");
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
         controls.add(new JLabel("Categoria:"));
         controls.add(categorySelect);
         controls.add(refreshButton);
+        controls.add(addButton);
         controls.add(statusLabel);
 
         catalogTable = new CatalogTable(statusLabel, libraryClient, navigator);
@@ -87,10 +96,13 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
 
         refreshButton.addActionListener(e -> loadCatalog());
         categorySelect.addActionListener(e -> loadCatalog());
+        addButton.addActionListener(e -> startAddItem());
     }
 
     @Override
     public void onShow() {
+        addButton.setVisible(isLibrarian());
+        addButton.setEnabled(isLibrarian());
         loadCatalog();
     }
 
@@ -145,4 +157,40 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
         }.execute();
     }
 
+    private void startAddItem() {
+        if (!isLibrarian()) {
+            statusLabel.setText("Solo il bibliotecario può aggiungere elementi.");
+            return;
+        }
+        ItemType selected = (ItemType) categorySelect.getSelectedItem();
+        if (selected == null) {
+            selected = ItemType.NONE;
+        }
+        Item newItem = newItemForType(selected);
+        newItem.setTipo(selected);
+        libraryClient.setPendingEditItem(newItem);
+        if (navigator != null) {
+            navigator.navigate(Route.LIBRARIAN_EDIT_ITEM);
+        }
+    }
+
+    private boolean isLibrarian() {
+        if (libraryClient == null || !libraryClient.isLoggedIn() || libraryClient.getSession() == null) {
+            return false;
+        }
+        return libraryClient.getSession().userType() != UserType.STUDENTE;
+    }
+
+    private Item newItemForType(ItemType type) {
+        if (type == ItemType.LIBRO) {
+            return new Libro();
+        }
+        if (type == ItemType.CD) {
+            return new CD();
+        }
+        if (type == ItemType.RIVISTA) {
+            return new Rivista();
+        }
+        return new Item();
+    }
 }

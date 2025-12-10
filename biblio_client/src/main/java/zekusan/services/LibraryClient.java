@@ -100,9 +100,23 @@ public class LibraryClient {
 		return apiClient.cancelPendingBorrow(session.token(), session.username(), requestId);
 	}
 
+	public Item addItem(Item item) throws IOException {
+		ensureLoggedIn();
+		return apiClient.addItem(session.token(), session.username(), item);
+	}
+
 	public Item updateItem(Item item) throws IOException {
 		ensureLoggedIn();
 		return apiClient.updateItem(session.token(), session.username(), item);
+	}
+
+	public Item saveItem(Item item) throws IOException {
+		if (item == null) {
+			throw new IllegalArgumentException("Item is required");
+		}
+		ensureLoggedIn();
+		return item.getId() > 0 ? apiClient.updateItem(session.token(), session.username(), item)
+				: apiClient.addItem(session.token(), session.username(), item);
 	}
 
 	public void setPendingEditItem(Item item) {

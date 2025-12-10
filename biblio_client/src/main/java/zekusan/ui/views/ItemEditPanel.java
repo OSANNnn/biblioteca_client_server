@@ -1,19 +1,28 @@
 package zekusan.ui.views;
 
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.GridLayout;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.Insets;
+import java.awt.Dimension;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
 
 import zekusan.enums.ItemType;
 import zekusan.enums.Route;
@@ -26,252 +35,496 @@ import zekusan.models.items.Rivista;
 import zekusan.services.LibraryClient;
 
 public class ItemEditPanel extends JPanel implements PanelLifecycle {
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    private final transient LibraryClient libraryClient;
-    private final transient Navigator navigator;
+	private static final int LABEL_COLUMN_WIDTH = 90;
 
-    private final List<FieldRow> dynamicRows = new ArrayList<>();
-    private final JLabel headingLabel = new JLabel("Modifica elemento");
-    private final JLabel statusLabel = new JLabel(" ");
-    private ItemType type = ItemType.NONE;
-    private Item baseItem;
+	private final transient LibraryClient libraryClient;
+	private final transient Navigator navigator;
 
-    private final JTextField titoloField = new JTextField(22);
-    private final JTextField quantitaField = new JTextField(12);
-    private final JTextField autoreField = new JTextField(22);
-    private final JTextField genereField = new JTextField(22);
-    private final JTextField isbnField = new JTextField(22);
-    private final JTextField artistaField = new JTextField(22);
-    private final JTextField annoField = new JTextField(12);
-    private final JTextField numeroField = new JTextField(12);
+	private final JLabel headingLabel = new JLabel("Modifica elemento");
+	private final JLabel statusLabel = new JLabel(" ");
+	private final JLabel typeValueLabel = new JLabel("-");
+	private final JTextField titoloField = new JTextField(22);
+	private final JSpinner quantitaSpinner = new JSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
 
-    private JPanel formContainer;
+	private final JPanel extraCardHost = new JPanel(new CardLayout());
+	private final Map<ItemType, ItemDetailForm<? extends Item>> detailForms = new EnumMap<>(ItemType.class);
+	private final ItemDetailForm<Item> emptyForm = new EmptyDetailForm();
 
-    public ItemEditPanel(LibraryClient libraryClient, Navigator navigator) {
-        super(new GridBagLayout());
-        this.libraryClient = libraryClient;
-        this.navigator = navigator;
+	private final JButton cancelButton = new JButton("Annulla");
+	private final JButton saveButton = new JButton("Salva");
 
-        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+	private ItemType type = ItemType.NONE;
+	private Item baseItem;
 
-        headingLabel.setFont(
-            headingLabel.getFont().deriveFont(
-                headingLabel.getFont().getSize2D() + 3f
-            )
-        );
-        headingLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+	public ItemEditPanel(LibraryClient libraryClient, Navigator navigator) {
+		super(new GridBagLayout());
+		this.libraryClient = libraryClient;
+		this.navigator = navigator;
 
-        formContainer = new JPanel(new GridBagLayout());
+		setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        JPanel actions = new JPanel(new GridLayout(1, 2, 10, 0));
-        JButton cancel = new JButton("Annulla");
-        JButton save = new JButton("Salva");
-        cancel.addActionListener(e -> {
-            statusLabel.setText("Modifica annullata.");
-            if (navigator != null) {
-                navigator.back();
-            }
-        });
-        save.addActionListener(e -> saveChanges());
-        actions.add(cancel);
-        actions.add(save);
+		headingLabel.setFont(
+				headingLabel.getFont().deriveFont(
+						headingLabel.getFont().getSize2D() + 3f));
+		headingLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
 
-        statusLabel.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
+		registerForm(ItemType.LIBRO, new LibroForm());
+		registerForm(ItemType.CD, new CdForm());
+		registerForm(ItemType.RIVISTA, new RivistaForm());
+		extraCardHost.add(emptyForm.getComponent(), ItemType.NONE.name());
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.FIRST_LINE_START;
+		cancelButton.addActionListener(e -> handleCancel());
+		saveButton.addActionListener(e -> saveChanges());
 
-        gbc.gridy = 0;
-        gbc.insets = new Insets(0, 0, 8, 0);
-        add(headingLabel, gbc);
+		JPanel baseForm = buildBaseForm();
 
-        gbc.gridy = 1;
-        gbc.insets = new Insets(0, 0, 12, 0);
-        add(formContainer, gbc);
+		JPanel actions = new JPanel(new GridLayout(1, 2, 10, 0));
+		actions.add(cancelButton);
+		actions.add(saveButton);
 
-        gbc.gridy = 2;
-        gbc.insets = new Insets(0, 0, 4, 0);
-        add(actions, gbc);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.weightx = 1.0;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.anchor = GridBagConstraints.FIRST_LINE_START;
 
-        gbc.gridy = 3;
-        gbc.insets = new Insets(0, 0, 0, 0);
-        add(statusLabel, gbc);
+		gbc.gridy = 0;
+		gbc.insets = new Insets(0, 0, 8, 0);
+		add(headingLabel, gbc);
 
-        gbc.gridy = 4;
-        gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        add(Box.createVerticalGlue(), gbc);
-    }
+		gbc.gridy = 1;
+		gbc.insets = new Insets(0, 0, 8, 0);
+		add(baseForm, gbc);
 
-    @Override
-    public void onShow() {
-        Item item = libraryClient.consumePendingEditItem();
-        if (item == null) {
-            statusLabel.setText("Nessun elemento da modificare.");
-            if (navigator != null) {
-                navigator.navigate(Route.LIBRARIAN_CATALOG);
-            }
-            return;
-        }
-        this.baseItem = item;
-        this.type = item.getTipo() == null ? ItemType.NONE : item.getTipo();
-        headingLabel.setText("Modifica " + (item.getTitolo() == null ? "" : item.getTitolo()));
-        rebuildForm();
-        loadValues(item);
-        statusLabel.setText(" ");
-    }
+		gbc.gridy = 2;
+		gbc.insets = new Insets(0, 0, 8, 0);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weighty = 0;
+		add(extraCardHost, gbc);
 
-    @Override
-    public void onHide() {
-        // no-op
-    }
+		gbc.gridy = 3;
+		gbc.insets = new Insets(6, 0, 4, 0);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		add(actions, gbc);
 
-    private void rebuildForm() {
-        formContainer.removeAll();
-        dynamicRows.clear();
+		gbc.gridy = 4;
+		gbc.insets = new Insets(0, 0, 0, 0);
+		add(statusLabel, gbc);
 
-        JPanel form = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.LINE_START;
-        gbc.insets = new Insets(4, 4, 4, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 0;
+		gbc.gridy = 5;
+		gbc.weighty = 1.0;
+		gbc.fill = GridBagConstraints.BOTH;
+		add(Box.createVerticalGlue(), gbc);
+	}
 
-        addRow(form, gbc, "Titolo", titoloField);
-        addRow(form, gbc, "Quantità", quantitaField);
+	@Override
+	public void onShow() {
+		Item item = libraryClient.consumePendingEditItem();
+		if (item == null) {
+			statusLabel.setText("Nessun elemento da modificare.");
+			if (navigator != null) {
+				navigator.navigate(Route.LIBRARIAN_CATALOG);
+			}
+			return;
+		}
+		this.baseItem = item;
+		this.type = resolveType(item);
+		typeValueLabel.setText(typeLabel(type));
+		headingLabel.setText(item.getId() > 0
+				? "Modifica " + nullToEmpty(item.getTitolo())
+				: "Nuovo " + typeLabel(type).toLowerCase());
+		loadValues(item);
+		statusLabel.setText(" ");
+	}
 
-        if (type == ItemType.LIBRO) {
-            addRow(form, gbc, "Autore", autoreField);
-            addRow(form, gbc, "Genere", genereField);
-            addRow(form, gbc, "ISBN", isbnField);
-        } else if (type == ItemType.CD) {
-            addRow(form, gbc, "Artista", artistaField);
-            addRow(form, gbc, "Genere", genereField);
-        } else if (type == ItemType.RIVISTA) {
-            addRow(form, gbc, "Anno", annoField);
-            addRow(form, gbc, "Numero", numeroField);
-        }
+	@Override
+	public void onHide() {
+		// no-op
+	}
 
-        GridBagConstraints containerGbc = new GridBagConstraints();
-        containerGbc.gridx = 0;
-        containerGbc.gridy = 0;
-        containerGbc.weightx = 1.0;
-        containerGbc.fill = GridBagConstraints.HORIZONTAL;
-        formContainer.add(form, containerGbc);
+	private void loadValues(Item item) {
+		titoloField.setText(nullToEmpty(item.getTitolo()));
+		int qty = item.getQuantita();
+		if (qty < 0) {
+			qty = 0;
+		}
+		quantitaSpinner.setValue(qty);
 
-        revalidate();
-        repaint();
-    }
+		showFormFor(type);
+		ItemDetailForm<? extends Item> form = detailForms.getOrDefault(type, emptyForm);
+		bindIntoForm(form, item);
+	}
 
-    private void addRow(JPanel form, GridBagConstraints gbc, String label, JTextField field) {
-        gbc.gridx = 0;
-        gbc.weightx = 0;
-        form.add(new JLabel(label + ":"), gbc);
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        form.add(field, gbc);
-        dynamicRows.add(new FieldRow(label, field));
-        gbc.gridy++;
-    }
+	private void saveChanges() {
+		Item updated = buildItem();
+		boolean isNew = updated.getId() <= 0;
+		statusLabel.setText(isNew ? "Creazione in corso..." : "Aggiornamento in corso...");
+		saveButton.setEnabled(false);
+		cancelButton.setEnabled(false);
 
-    private void loadValues(Item item) {
-        if (item == null) {
-            return;
-        }
-        titoloField.setText(nullToEmpty(item.getTitolo()));
-        quantitaField.setText(String.valueOf(item.getQuantita()));
+		new SwingWorker<Item, Void>() {
+			@Override
+			protected Item doInBackground() throws Exception {
+				return libraryClient.saveItem(updated);
+			}
 
-        if (item instanceof Libro libro) {
-            autoreField.setText(nullToEmpty(libro.getAutore()));
-            genereField.setText(nullToEmpty(libro.getGenere()));
-            isbnField.setText(nullToEmpty(libro.getIsbn()));
-        } else if (item instanceof CD cd) {
-            artistaField.setText(nullToEmpty(cd.getArtista()));
-            genereField.setText(nullToEmpty(cd.getGenere()));
-        } else if (item instanceof Rivista rivista) {
-            annoField.setText(String.valueOf(rivista.getAnno()));
-            numeroField.setText(String.valueOf(rivista.getNumero()));
-        }
-    }
+			@Override
+			protected void done() {
+				saveButton.setEnabled(true);
+				cancelButton.setEnabled(true);
+				try {
+					get();
+					statusLabel.setText(isNew ? "Elemento creato." : "Elemento aggiornato.");
+					if (navigator != null) {
+						navigator.navigate(Route.LIBRARIAN_CATALOG);
+					}
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					statusLabel.setText("Operazione interrotta.");
+				} catch (ExecutionException e) {
+					statusLabel.setText("Errore salvataggio: " + e.getCause().getMessage());
+				}
+			}
+		}.execute();
+	}
 
-    private void saveChanges() {
-        Item updated = buildItem();
-        statusLabel.setText("Aggiornamento in corso...");
+	private void handleCancel() {
+		statusLabel.setText("Modifica annullata.");
+		if (navigator != null) {
+			if (navigator != null) {
+				navigator.back();
+			}
+		}
+	}
 
-        new javax.swing.SwingWorker<Item, Void>() {
-            @Override
-            protected Item doInBackground() throws Exception {
-                return libraryClient.updateItem(updated);
-            }
+	private Item buildItem() {
+		Item target = newItemForType(type);
+		if (baseItem != null && baseItem.getId() > 0) {
+			target.setId(baseItem.getId());
+		}
+		target.setTipo(type);
+		target.setTitolo(titoloField.getText().trim());
+		target.setQuantita(((Number) quantitaSpinner.getValue()).intValue());
 
-            @Override
-            protected void done() {
-                try {
-                    Item saved = get();
-                    statusLabel.setText("Elemento aggiornato.");
-                    if (navigator != null) {
-                        navigator.navigate(Route.LIBRARIAN_CATALOG);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    statusLabel.setText("Aggiornamento interrotto.");
-                } catch (ExecutionException e) {
-                    statusLabel.setText("Errore aggiornamento: " + e.getCause().getMessage());
-                }
-            }
-        }.execute();
-    }
+		ItemDetailForm<? extends Item> form = detailForms.getOrDefault(type, emptyForm);
+		applyFromForm(form, target);
+		return target;
+	}
 
-    private Item buildItem() {
-        Item result;
-        if (type == ItemType.LIBRO) {
-            Libro libro = new Libro();
-            libro.setAutore(autoreField.getText().trim());
-            libro.setGenere(genereField.getText().trim());
-            libro.setIsbn(isbnField.getText().trim());
-            result = libro;
-        } else if (type == ItemType.CD) {
-            CD cd = new CD();
-            cd.setArtista(artistaField.getText().trim());
-            cd.setGenere(genereField.getText().trim());
-            result = cd;
-        } else if (type == ItemType.RIVISTA) {
-            Rivista rivista = new Rivista();
-            rivista.setAnno(parseIntSafe(annoField.getText()));
-            rivista.setNumero(parseIntSafe(numeroField.getText()));
-            result = rivista;
-        } else {
-            result = new Item();
-            result.setTipo(type);
-        }
+	private static JLabel createFormLabel(String text) {
+		JLabel label = new JLabel(text);
+		label.setHorizontalAlignment(SwingConstants.LEFT);
+		Dimension pref = label.getPreferredSize();
+		pref = new Dimension(LABEL_COLUMN_WIDTH, pref.height);
+		label.setPreferredSize(pref);
+		return label;
+	}
 
-        if (baseItem != null) {
-            result.setId(baseItem.getId());
-            result.setTipo(type);
-        }
-        result.setTitolo(titoloField.getText().trim());
-        result.setQuantita(parseIntSafe(quantitaField.getText()));
-        return result;
-    }
+	private JPanel buildBaseForm() {
+		JPanel base = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.insets = new Insets(4, 0, 2, 0);
+		gbc.anchor = GridBagConstraints.LINE_START;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-    private int parseIntSafe(String value) {
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
+		// Titolo
+		gbc.weightx = 0;
+		base.add(createFormLabel("Titolo"), gbc);
+		gbc.gridy++;
+		gbc.weightx = 1.0;
+		base.add(titoloField, gbc);
 
-    private String nullToEmpty(String value) {
-        return value == null ? "" : value;
-    }
+		// Quantità
+		gbc.gridy++;
+		gbc.weightx = 0;
+		base.add(createFormLabel("Quantità"), gbc);
+		gbc.gridy++;
+		gbc.weightx = 1.0;
+		base.add(quantitaSpinner, gbc);
 
-    private record FieldRow(String label, JTextField field) {
-    }
+		// Tipo
+		gbc.gridy++;
+		gbc.weightx = 0;
+		base.add(createFormLabel("Tipo"), gbc);
+		gbc.gridy++;
+		gbc.weightx = 1.0;
+		typeValueLabel.setFont(typeValueLabel.getFont()
+				.deriveFont(typeValueLabel.getFont().getStyle() | java.awt.Font.BOLD));
+		base.add(typeValueLabel, gbc);
+
+		return base;
+	}
+
+	private void registerForm(ItemType type, ItemDetailForm<? extends Item> form) {
+		detailForms.put(type, form);
+		extraCardHost.add(form.getComponent(), type.name());
+	}
+
+	private void showFormFor(ItemType type) {
+		CardLayout layout = (CardLayout) extraCardHost.getLayout();
+		layout.show(extraCardHost, detailForms.containsKey(type) ? type.name() : ItemType.NONE.name());
+	}
+
+	private ItemType resolveType(Item item) {
+		if (item == null) {
+			return ItemType.NONE;
+		}
+		if (item.getTipo() != null && item.getTipo() != ItemType.NONE) {
+			return item.getTipo();
+		}
+		if (item instanceof Libro) {
+			return ItemType.LIBRO;
+		}
+		if (item instanceof CD) {
+			return ItemType.CD;
+		}
+		if (item instanceof Rivista) {
+			return ItemType.RIVISTA;
+		}
+		return ItemType.NONE;
+	}
+
+	private String typeLabel(ItemType type) {
+		return switch (type) {
+		case LIBRO -> "Libro";
+		case CD -> "CD";
+		case RIVISTA -> "Rivista";
+		default -> "Nessuna categoria";
+		};
+	}
+
+	private Item newItemForType(ItemType type) {
+		return switch (type) {
+		case LIBRO -> new Libro();
+		case CD -> new CD();
+		case RIVISTA -> new Rivista();
+		default -> new Item();
+		};
+	}
+
+	@SuppressWarnings("unchecked")
+	private void bindIntoForm(ItemDetailForm<? extends Item> form, Item item) {
+		try {
+			((ItemDetailForm<Item>) form).bindFrom(item);
+		} catch (ClassCastException ignored) {
+			// ignore mismatched form
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void applyFromForm(ItemDetailForm<? extends Item> form, Item item) {
+		try {
+			((ItemDetailForm<Item>) form).applyTo(item);
+		} catch (ClassCastException ignored) {
+			// ignore mismatched form
+		}
+	}
+
+	private static String nullToEmpty(String value) {
+		return value == null ? "" : value;
+	}
+
+	private interface ItemDetailForm<T extends Item> {
+		void bindFrom(T item);
+
+		void applyTo(T item);
+
+		JComponent getComponent();
+	}
+
+	/**
+	 * LibroForm: now uses vertical Label/Input layout for each field.
+	 */
+	private static class LibroForm extends JPanel implements ItemDetailForm<Libro> {
+		private static final long serialVersionUID = 1L;
+
+		private final JTextField autoreField = new JTextField(22);
+		private final JTextField genereField = new JTextField(22);
+		private final JTextField isbnField = new JTextField(22);
+
+		LibroForm() {
+			super(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			gbc.insets = new Insets(4, 0, 2, 0);
+			gbc.anchor = GridBagConstraints.LINE_START;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+
+			// Autore
+			gbc.weightx = 0;
+			add(createFormLabel("Autore"), gbc);
+			gbc.gridy++;
+			gbc.weightx = 1.0;
+			add(autoreField, gbc);
+
+			// Genere
+			gbc.gridy++;
+			gbc.weightx = 0;
+			add(createFormLabel("Genere"), gbc);
+			gbc.gridy++;
+			gbc.weightx = 1.0;
+			add(genereField, gbc);
+
+			// ISBN
+			gbc.gridy++;
+			gbc.weightx = 0;
+			add(createFormLabel("ISBN"), gbc);
+			gbc.gridy++;
+			gbc.weightx = 1.0;
+			add(isbnField, gbc);
+		}
+
+		@Override
+		public void bindFrom(Libro item) {
+			autoreField.setText(item == null ? "" : nullToEmpty(item.getAutore()));
+			genereField.setText(item == null ? "" : nullToEmpty(item.getGenere()));
+			isbnField.setText(item == null ? "" : nullToEmpty(item.getIsbn()));
+		}
+
+		@Override
+		public void applyTo(Libro item) {
+			item.setAutore(autoreField.getText().trim());
+			item.setGenere(genereField.getText().trim());
+			item.setIsbn(isbnField.getText().trim());
+		}
+
+		@Override
+		public JComponent getComponent() {
+			return this;
+		}
+	}
+
+	/**
+	 * CdForm: vertical Label/Input layout.
+	 */
+	private static class CdForm extends JPanel implements ItemDetailForm<CD> {
+		private static final long serialVersionUID = 1L;
+
+		private final JTextField artistaField = new JTextField(22);
+		private final JTextField genereField = new JTextField(22);
+
+		CdForm() {
+			super(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			gbc.insets = new Insets(4, 0, 2, 0);
+			gbc.anchor = GridBagConstraints.LINE_START;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+
+			// Artista
+			gbc.weightx = 0;
+			add(createFormLabel("Artista"), gbc);
+			gbc.gridy++;
+			gbc.weightx = 1.0;
+			add(artistaField, gbc);
+
+			// Genere
+			gbc.gridy++;
+			gbc.weightx = 0;
+			add(createFormLabel("Genere"), gbc);
+			gbc.gridy++;
+			gbc.weightx = 1.0;
+			add(genereField, gbc);
+		}
+
+		@Override
+		public void bindFrom(CD item) {
+			artistaField.setText(item == null ? "" : nullToEmpty(item.getArtista()));
+			genereField.setText(item == null ? "" : nullToEmpty(item.getGenere()));
+		}
+
+		@Override
+		public void applyTo(CD item) {
+			item.setArtista(artistaField.getText().trim());
+			item.setGenere(genereField.getText().trim());
+		}
+
+		@Override
+		public JComponent getComponent() {
+			return this;
+		}
+	}
+
+	/**
+	 * RivistaForm: vertical Label/Input layout.
+	 */
+	private static class RivistaForm extends JPanel implements ItemDetailForm<Rivista> {
+		private static final long serialVersionUID = 1L;
+
+		private final JSpinner annoSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 9999, 1));
+		private final JSpinner numeroSpinner = new JSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
+
+		RivistaForm() {
+			super(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			gbc.insets = new Insets(4, 0, 2, 0);
+			gbc.anchor = GridBagConstraints.LINE_START;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+
+			// Anno
+			gbc.weightx = 0;
+			add(createFormLabel("Anno"), gbc);
+			gbc.gridy++;
+			gbc.weightx = 1.0;
+			add(annoSpinner, gbc);
+
+			// Numero
+			gbc.gridy++;
+			gbc.weightx = 0;
+			add(createFormLabel("Numero"), gbc);
+			gbc.gridy++;
+			gbc.weightx = 1.0;
+			add(numeroSpinner, gbc);
+		}
+
+		@Override
+		public void bindFrom(Rivista item) {
+			annoSpinner.setValue(item == null ? 0 : Math.max(0, item.getAnno()));
+			numeroSpinner.setValue(item == null ? 0 : Math.max(0, item.getNumero()));
+		}
+
+		@Override
+		public void applyTo(Rivista item) {
+			item.setAnno(((Number) annoSpinner.getValue()).intValue());
+			item.setNumero(((Number) numeroSpinner.getValue()).intValue());
+		}
+
+		@Override
+		public JComponent getComponent() {
+			return this;
+		}
+	}
+
+	private static class EmptyDetailForm extends JPanel implements ItemDetailForm<Item> {
+		private static final long serialVersionUID = 1L;
+
+		EmptyDetailForm() {
+			super(new BorderLayout());
+			setBorder(new EmptyBorder(0, 0, 0, 0));
+			// no label -> visually seamless when no extra details
+		}
+
+		@Override
+		public void bindFrom(Item item) {
+			// nothing to bind
+		}
+
+		@Override
+		public void applyTo(Item item) {
+			// nothing to apply
+		}
+
+		@Override
+		public JComponent getComponent() {
+			return this;
+		}
+	}
 }
