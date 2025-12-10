@@ -3,9 +3,9 @@ package zekusan.app.systems;
 import java.io.IOException;
 import java.util.List;
 
-import zekusan.models.comms.Status;
-import zekusan.models.comms.requests.PrenotazioneRequest;
-import zekusan.models.comms.responses.PrenotazioneResponse;
+import zekusan.comms.requests.PrenotazioneRequest;
+import zekusan.comms.responses.PrenotazioneResponse;
+import zekusan.enums.Status;
 import zekusan.models.items.Item;
 
 public class PrenotazioneSystem {

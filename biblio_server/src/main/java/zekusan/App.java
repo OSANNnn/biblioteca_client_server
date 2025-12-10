@@ -5,9 +5,10 @@ import java.io.IOException;
 import com.fasterxml.jackson.core.JacksonException;
 
 import zekusan.app.systems.*;
-import zekusan.models.comms.Status;
-import zekusan.models.comms.requests.*;
-import zekusan.models.comms.responses.*;
+import zekusan.comms.requests.*;
+import zekusan.comms.responses.*;
+import zekusan.enums.Status;
+import zekusan.net.Converter;
 
 public class App {
 	public static void main(String[] args) {

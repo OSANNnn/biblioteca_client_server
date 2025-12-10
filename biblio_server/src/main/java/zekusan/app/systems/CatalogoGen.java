@@ -9,8 +9,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
-import zekusan.models.ItemType;
+import zekusan.enums.ItemType;
 import zekusan.models.items.Item;
+import zekusan.net.Converter;
 
 public class CatalogoGen {
 
