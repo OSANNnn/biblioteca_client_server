@@ -68,6 +68,16 @@ public class LibraryClient {
 		return apiClient.fetchPendingLoans(session.token(), session.username());
 	}
 
+	public List<LoanInfo> loadMyBorrowedItems() throws IOException {
+		ensureLoggedIn();
+		return apiClient.fetchUserLoanedItems(session.token(), session.username());
+	}
+
+	public List<PendingLoanInfo> loadMyPendingBorrows() throws IOException {
+		ensureLoggedIn();
+		return apiClient.fetchUserPendingLoans(session.token(), session.username());
+	}
+
 	public LoanInfo acceptPendingLoan(int requestId) throws IOException {
 		ensureLoggedIn();
 		return apiClient.acceptPendingLoan(session.token(), session.username(), requestId);
@@ -76,6 +86,16 @@ public class LibraryClient {
 	public boolean cancelPendingLoan(int requestId) throws IOException {
 		ensureLoggedIn();
 		return apiClient.cancelPendingLoan(session.token(), session.username(), requestId);
+	}
+
+	public boolean returnLoan(int loanId) throws IOException {
+		ensureLoggedIn();
+		return apiClient.returnLoan(session.token(), session.username(), loanId);
+	}
+
+	public boolean cancelBorrowRequest(int requestId) throws IOException {
+		ensureLoggedIn();
+		return apiClient.cancelPendingBorrow(session.token(), session.username(), requestId);
 	}
 
 	private void ensureLoggedIn() {

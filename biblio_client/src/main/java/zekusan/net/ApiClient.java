@@ -63,6 +63,22 @@ public class ApiClient {
 				.toList();
 	}
 
+	public synchronized List<LoanInfo> fetchUserLoanedItems(int token, String username) {
+		ensureUserSamples(username);
+		return mockLoaned.stream()
+				.filter(loan -> username != null && username.equalsIgnoreCase(loan.getBorrower()))
+				.map(ApiClient::copyLoan)
+				.toList();
+	}
+
+	public synchronized List<PendingLoanInfo> fetchUserPendingLoans(int token, String username) {
+		ensureUserSamples(username);
+		return mockPending.stream()
+				.filter(p -> username != null && username.equalsIgnoreCase(p.getBorrower()))
+				.map(ApiClient::copyPending)
+				.toList();
+	}
+
 	public synchronized LoanInfo acceptPendingLoan(int token, String username, int requestId) throws IOException {
 		PendingLoanInfo pending = mockPending.stream()
 				.filter(req -> req.getId() == requestId)
@@ -91,6 +107,16 @@ public class ApiClient {
 
 	public synchronized boolean cancelPendingLoan(int token, String username, int requestId) {
 		return mockPending.removeIf(req -> req.getId() == requestId);
+	}
+
+	public synchronized boolean returnLoan(int token, String username, int loanId) {
+		return mockLoaned.removeIf(loan ->
+				loan.getId() == loanId && username != null && username.equalsIgnoreCase(loan.getBorrower()));
+	}
+
+	public synchronized boolean cancelPendingBorrow(int token, String username, int requestId) {
+		return mockPending.removeIf(req ->
+				req.getId() == requestId && username != null && username.equalsIgnoreCase(req.getBorrower()));
 	}
 
 	private CatalogoResponse sendCatalogo(CatalogoRequest request) throws IOException {
@@ -255,5 +281,32 @@ public class ApiClient {
 				pending.getCategory(),
 				pending.getBorrower(),
 				pending.getRequestedOn());
+	}
+
+	private void ensureUserSamples(String username) {
+		if (username == null || username.isBlank()) {
+			return;
+		}
+
+		boolean hasLoan = mockLoaned.stream().anyMatch(loan -> username.equalsIgnoreCase(loan.getBorrower()));
+		boolean hasPending = mockPending.stream().anyMatch(req -> username.equalsIgnoreCase(req.getBorrower()));
+
+		if (hasLoan && hasPending) {
+			return;
+		}
+
+		LocalDate today = LocalDate.now();
+
+		if (!hasLoan) {
+			mockLoaned.add(new LoanInfo(nextLoanId(), 101, "Manuale di Java", ItemType.LIBRO, username,
+					today.minusDays(2), today.plusDays(12)));
+			mockLoaned.add(new LoanInfo(nextLoanId(), 305, "Lezioni di Rock", ItemType.CD, username,
+					today.minusDays(6), today.plusDays(6)));
+		}
+
+		if (!hasPending) {
+			mockPending.add(new PendingLoanInfo(nextRequestId(), 808, "Rivista Scienza 2024/01", ItemType.RIVISTA,
+					username, today.minusDays(1)));
+		}
 	}
 }
