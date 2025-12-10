@@ -1,4 +1,4 @@
-package zekusan.ui.views;
+package zekusan.ui.components;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ import zekusan.models.items.Libro;
 import zekusan.models.items.Rivista;
 import zekusan.services.LibraryClient;
 
-class CatalogTable {
+public class CatalogTable {
     private final DefaultTableModel tableModel;
     private final JTable table;
     private final JScrollPane scrollPane;
@@ -26,7 +26,7 @@ class CatalogTable {
     private int actionsColumnIndex = 5;
     private ItemType currentType = ItemType.NONE;
 
-    CatalogTable(JLabel statusLabel, LibraryClient libraryClient) {
+    public CatalogTable(JLabel statusLabel, LibraryClient libraryClient, zekusan.interfaces.Navigator navigator) {
         tableModel = new DefaultTableModel(
                 new Object[] { "ID", "Titolo", "Quantita", "Tipo", "Dettagli", "Azioni" }, 0) {
             private static final long serialVersionUID = 1L;
@@ -55,6 +55,7 @@ class CatalogTable {
                 statusLabel,
                 this::getCurrentType,
                 libraryClient,
+                navigator,
                 this::decrementQuantity);
         table.setRowHeight(actionsCell.getPreferredHeight() + 2);
 
@@ -64,7 +65,7 @@ class CatalogTable {
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     }
 
-    void configureColumnsForType(ItemType type) {
+    public void configureColumnsForType(ItemType type) {
         String[] columns;
         currentType = type;
 
@@ -103,12 +104,12 @@ class CatalogTable {
             TableColumn actionsColumn = table.getColumnModel().getColumn(actionsColumnIndex);
             actionsColumn.setCellRenderer(actionsCell);
             actionsColumn.setCellEditor(actionsCell);
-            actionsColumn.setMinWidth(180);
-            actionsColumn.setPreferredWidth(200);
+            actionsColumn.setMinWidth(220);
+            actionsColumn.setPreferredWidth(240);
         }
     }
 
-    void updateRows(List<Item> items, ItemType type) {
+    public void updateRows(List<Item> items, ItemType type) {
         if (items == null) {
             return;
         }
@@ -155,11 +156,11 @@ class CatalogTable {
         }
     }
 
-    void clearRows() {
+    public void clearRows() {
         tableModel.setRowCount(0);
     }
 
-    JScrollPane getScrollPane() {
+    public JScrollPane getScrollPane() {
         return scrollPane;
     }
 

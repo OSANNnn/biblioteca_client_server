@@ -4,53 +4,65 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.event.MouseWheelEvent;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoundedRangeModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingWorker;
 
 import zekusan.comms.responses.CatalogoResponse;
 import zekusan.enums.ItemType;
+import zekusan.enums.Route;
 import zekusan.enums.Status;
+import zekusan.enums.UserType;
+import zekusan.interfaces.Navigator;
 import zekusan.interfaces.PanelLifecycle;
 import zekusan.services.LibraryClient;
+import zekusan.ui.components.CatalogTable;
+import zekusan.ui.components.ScrollablePanel;
+import zekusan.ui.components.ScrollUtil;
+import zekusan.models.items.CD;
+import zekusan.models.items.Item;
+import zekusan.models.items.Libro;
+import zekusan.models.items.Rivista;
 
 public class CatalogPanel extends JPanel implements PanelLifecycle {
     private static final long serialVersionUID = 1L;
 
     private final transient LibraryClient libraryClient;
+    private final transient Navigator navigator;
     private final JComboBox<ItemType> categorySelect;
     private final JLabel statusLabel;
     private final JButton refreshButton;
+    private final JButton addButton;
     private final transient CatalogTable catalogTable;
 
-    public CatalogPanel(LibraryClient libraryClient) {
+    public CatalogPanel(LibraryClient libraryClient, Navigator navigator) {
         super(new BorderLayout(8, 8));
         this.libraryClient = libraryClient;
+        this.navigator = navigator;
 
         categorySelect = new JComboBox<>(new ItemType[] { ItemType.LIBRO, ItemType.CD, ItemType.RIVISTA });
         refreshButton = new JButton("Aggiorna catalogo");
+        addButton = new JButton("Aggiungi elemento");
         statusLabel = new JLabel(" ");
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
         controls.add(new JLabel("Categoria:"));
         controls.add(categorySelect);
         controls.add(refreshButton);
+        controls.add(addButton);
         controls.add(statusLabel);
 
-        catalogTable = new CatalogTable(statusLabel, libraryClient);
+        catalogTable = new CatalogTable(statusLabel, libraryClient, navigator);
         JScrollPane tableScroll = catalogTable.getScrollPane();
 
-        ScrollablePage page = new ScrollablePage();
+        ScrollablePanel page = new ScrollablePanel();
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.weightx = 1.0;
@@ -71,7 +83,7 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
                 page,
                 ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        enableEdgeWheelPropagation(tableScroll, outerScroll);
+        ScrollUtil.enableEdgeWheelPropagation(tableScroll, outerScroll);
         outerScroll.getVerticalScrollBar().setUnitIncrement(16);
         outerScroll.getVerticalScrollBar().setBlockIncrement(240);
         outerScroll.setBorder(BorderFactory.createEmptyBorder());
@@ -84,10 +96,13 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
 
         refreshButton.addActionListener(e -> loadCatalog());
         categorySelect.addActionListener(e -> loadCatalog());
+        addButton.addActionListener(e -> startAddItem());
     }
 
     @Override
     public void onShow() {
+        addButton.setVisible(isLibrarian());
+        addButton.setEnabled(isLibrarian());
         loadCatalog();
     }
 
@@ -142,45 +157,40 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
         }.execute();
     }
 
-    private void enableEdgeWheelPropagation(JScrollPane inner, JScrollPane outer) {
-        inner.addMouseWheelListener(e -> {
-            if (e.isShiftDown()) {
-                return;
-            }
+    private void startAddItem() {
+        if (!isLibrarian()) {
+            statusLabel.setText("Solo il bibliotecario può aggiungere elementi.");
+            return;
+        }
+        ItemType selected = (ItemType) categorySelect.getSelectedItem();
+        if (selected == null) {
+            selected = ItemType.NONE;
+        }
+        Item newItem = newItemForType(selected);
+        newItem.setTipo(selected);
+        libraryClient.setPendingEditItem(newItem);
+        if (navigator != null) {
+            navigator.navigate(Route.LIBRARIAN_EDIT_ITEM);
+        }
+    }
 
-            JScrollBar verticalBar = inner.getVerticalScrollBar();
-            if (verticalBar == null || !verticalBar.isVisible()) {
-                return;
-            }
+    private boolean isLibrarian() {
+        if (libraryClient == null || !libraryClient.isLoggedIn() || libraryClient.getSession() == null) {
+            return false;
+        }
+        return libraryClient.getSession().userType() != UserType.STUDENTE;
+    }
 
-            BoundedRangeModel model = verticalBar.getModel();
-            int value = model.getValue();
-            int extent = model.getExtent();
-            int min = model.getMinimum();
-            int max = model.getMaximum();
-
-            boolean atTop = value <= min;
-            boolean atBottom = value + extent >= max;
-
-            int direction = e.getWheelRotation() > 0 ? 1 : -1;
-            boolean shouldBubbleUp = (direction < 0 && atTop) || (direction > 0 && atBottom);
-
-            if (shouldBubbleUp) {
-                MouseWheelEvent forwarded = new MouseWheelEvent(
-                        outer,
-                        e.getID(),
-                        e.getWhen(),
-                        e.getModifiersEx(),
-                        e.getX(),
-                        e.getY(),
-                        e.getClickCount(),
-                        e.isPopupTrigger(),
-                        e.getScrollType(),
-                        e.getScrollAmount(),
-                        e.getWheelRotation());
-                outer.dispatchEvent(forwarded);
-                e.consume();
-            }
-        });
+    private Item newItemForType(ItemType type) {
+        if (type == ItemType.LIBRO) {
+            return new Libro();
+        }
+        if (type == ItemType.CD) {
+            return new CD();
+        }
+        if (type == ItemType.RIVISTA) {
+            return new Rivista();
+        }
+        return new Item();
     }
 }

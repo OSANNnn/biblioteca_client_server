@@ -1,4 +1,4 @@
-{"id":1,"username":"admin","password":"admin","userType":"STUDENTE"}
+{"id":1,"username":"admin","password":"admin","userType":"NONE"}
 {"id":2,"username":"roby","password":"roby","userType":"STUDENTE"}
 {"id":3,"username":"maria","password":"maria","userType":"STUDENTE"}
 {"id":4,"username":"luca","password":"luca","userType":"STUDENTE"}
