@@ -23,6 +23,8 @@ import zekusan.enums.ItemType;
 import zekusan.enums.Status;
 import zekusan.interfaces.PanelLifecycle;
 import zekusan.services.LibraryClient;
+import zekusan.ui.components.CatalogTable;
+import zekusan.ui.components.ScrollablePanel;
 
 public class CatalogPanel extends JPanel implements PanelLifecycle {
     private static final long serialVersionUID = 1L;
@@ -50,7 +52,7 @@ public class CatalogPanel extends JPanel implements PanelLifecycle {
         catalogTable = new CatalogTable(statusLabel, libraryClient);
         JScrollPane tableScroll = catalogTable.getScrollPane();
 
-        ScrollablePage page = new ScrollablePage();
+        ScrollablePanel page = new ScrollablePanel();
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.weightx = 1.0;

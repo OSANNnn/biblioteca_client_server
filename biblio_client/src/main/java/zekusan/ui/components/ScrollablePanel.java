@@ -1,4 +1,4 @@
-package zekusan.ui.views;
+package zekusan.ui.components;
 
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
@@ -9,10 +9,10 @@ import javax.swing.JPanel;
 import javax.swing.JViewport;
 import javax.swing.Scrollable;
 
-class ScrollablePage extends JPanel implements Scrollable {
+public class ScrollablePanel extends JPanel implements Scrollable {
     private static final long serialVersionUID = 1L;
 
-    ScrollablePage() {
+    public ScrollablePanel() {
         super(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
     }

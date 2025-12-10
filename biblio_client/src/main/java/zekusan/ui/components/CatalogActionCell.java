@@ -1,4 +1,4 @@
-package zekusan.ui.views;
+package zekusan.ui.components;
 
 import java.awt.Component;
 import java.awt.FlowLayout;
