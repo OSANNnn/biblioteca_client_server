@@ -2,9 +2,9 @@ package zekusan.app.systems;
 
 import java.util.List;
 
-import zekusan.models.comms.Status;
-import zekusan.models.comms.requests.CatalogoRequest;
-import zekusan.models.comms.responses.CatalogoResponse;
+import zekusan.comms.requests.CatalogoRequest;
+import zekusan.comms.responses.CatalogoResponse;
+import zekusan.enums.Status;
 import zekusan.models.items.Item;
 
 public class CatalogSystem {

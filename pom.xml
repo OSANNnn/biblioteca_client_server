@@ -1,0 +1,15 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>zekusan</groupId>
+  <artifactId>biblioteca_client_server</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>biblioteca_client_server</name>
+
+  <modules>
+    <module>biblio_shared</module>
+    <module>biblio_server</module>
+    <module>biblio_client</module>
+  </modules>
+</project>

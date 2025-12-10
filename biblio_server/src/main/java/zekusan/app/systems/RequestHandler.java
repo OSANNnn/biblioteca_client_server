@@ -4,8 +4,9 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JacksonException;
 
-import zekusan.models.comms.ActionType;
-import zekusan.models.comms.requests.Request;
+import zekusan.comms.requests.Request;
+import zekusan.enums.ActionType;
+import zekusan.net.Converter;
 
 public class RequestHandler {
 	public static Request process(String request) {
