@@ -104,8 +104,8 @@ public class CatalogTable {
             TableColumn actionsColumn = table.getColumnModel().getColumn(actionsColumnIndex);
             actionsColumn.setCellRenderer(actionsCell);
             actionsColumn.setCellEditor(actionsCell);
-            actionsColumn.setMinWidth(180);
-            actionsColumn.setPreferredWidth(200);
+            actionsColumn.setMinWidth(220);
+            actionsColumn.setPreferredWidth(240);
         }
     }
 

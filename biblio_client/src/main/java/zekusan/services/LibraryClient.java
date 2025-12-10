@@ -119,6 +119,11 @@ public class LibraryClient {
 				: apiClient.addItem(session.token(), session.username(), item);
 	}
 
+	public boolean deleteItem(int itemId) throws IOException {
+		ensureLoggedIn();
+		return apiClient.deleteItem(session.token(), session.username(), itemId);
+	}
+
 	public void setPendingEditItem(Item item) {
 		this.pendingEditItem = item;
 	}

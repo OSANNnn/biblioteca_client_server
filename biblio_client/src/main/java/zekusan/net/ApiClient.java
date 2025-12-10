@@ -156,6 +156,28 @@ public class ApiClient {
 		return copyItem(updated);
 	}
 
+	public synchronized boolean deleteItem(int token, String username, int itemId) throws IOException {
+		if (itemId <= 0) {
+			throw new IOException("ID elemento non valido");
+		}
+
+		Item toRemove = mockCatalog.stream()
+				.filter(item -> item != null && item.getId() == itemId)
+				.findFirst()
+				.orElse(null);
+
+		if (toRemove == null) {
+			return false;
+		}
+
+		mockCatalog.removeIf(item -> item != null && item.getId() == itemId);
+		mockLoaned.removeIf(loan -> loan != null && loan.getItemId() == itemId);
+		mockPending.removeIf(req -> req != null && req.getItemId() == itemId);
+
+		logMockAction("Rimozione", username, toRemove);
+		return true;
+	}
+
 	private CatalogoResponse sendCatalogo(CatalogoRequest request) throws IOException {
 		String payload = formatPayload(ActionType.CATALOGO, Converter.objectToJson(request));
 		String responseText = socketClient.send(payload);

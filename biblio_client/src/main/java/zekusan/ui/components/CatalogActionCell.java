@@ -42,10 +42,12 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
     // Renderer components (non-interactive)
     private final JPanel renderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
     private final JButton renderBorrow = new JButton();
+    private final JButton renderDelete = new JButton();
 
     // Editor components (interactive)
     private final JPanel editPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
     private final JButton editBorrow = new JButton();
+    private final JButton editDelete = new JButton();
 
     CatalogActionCell(
             JTable table,
@@ -67,13 +69,23 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
         renderBorrow.setFocusable(false);
         renderPanel.add(renderBorrow);
 
+        renderDelete.setText("Elimina");
+        renderDelete.setFocusable(false);
+        renderPanel.add(renderDelete);
+
         editBorrow.setText(buttonText());
         editPanel.add(editBorrow);
 
+        editDelete.setText("Elimina");
+        editPanel.add(editDelete);
+
         editBorrow.addActionListener(e -> handleBorrowAction());
+        editDelete.addActionListener(e -> handleDeleteAction());
+        refreshButtonsForRole();
     }
 
     private void handleBorrowAction() {
+        refreshButtonsForRole();
         int viewRow = table.getEditingRow();
         if (viewRow < 0) {
             viewRow = table.getSelectedRow();
@@ -144,10 +156,80 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
         fireEditingStopped();
     }
 
+    private void handleDeleteAction() {
+        refreshButtonsForRole();
+        if (!isLibrarian()) {
+            statusLabel.setText("Solo il bibliotecario può eliminare elementi.");
+            fireEditingCanceled();
+            return;
+        }
+
+        int viewRow = table.getEditingRow();
+        if (viewRow < 0) {
+            viewRow = table.getSelectedRow();
+        }
+
+        int modelRow = viewRow >= 0 ? table.convertRowIndexToModel(viewRow) : -1;
+        if (modelRow < 0) {
+            statusLabel.setText("Seleziona un elemento da eliminare.");
+            fireEditingCanceled();
+            return;
+        }
+
+        Object idValue = tableModel.getValueAt(modelRow, 0);
+        if (!(idValue instanceof Number idNumber)) {
+            statusLabel.setText("ID non valido per l'eliminazione.");
+            fireEditingCanceled();
+            return;
+        }
+
+        int itemId = idNumber.intValue();
+        statusLabel.setText("Eliminazione elemento ID " + itemId + "...");
+        editBorrow.setEnabled(false);
+        editDelete.setEnabled(false);
+
+        final int rowToRemove = modelRow;
+        new SwingWorker<Boolean, Void>() {
+            @Override
+            protected Boolean doInBackground() throws Exception {
+                return libraryClient.deleteItem(itemId);
+            }
+
+            @Override
+            protected void done() {
+                editBorrow.setEnabled(true);
+                editDelete.setEnabled(true);
+                try {
+                    Boolean removed = get();
+                    if (Boolean.TRUE.equals(removed)) {
+                        statusLabel.setText("Elemento eliminato.");
+                        if (rowToRemove >= 0 && rowToRemove < tableModel.getRowCount()) {
+                            tableModel.removeRow(rowToRemove);
+                        }
+                    } else {
+                        statusLabel.setText("Elemento non trovato o già rimosso.");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    statusLabel.setText("Eliminazione interrotta.");
+                } catch (ExecutionException e) {
+                    statusLabel.setText("Errore nell'eliminazione: " + e.getCause().getMessage());
+                }
+            }
+        }.execute();
+
+        if (viewRow >= 0) {
+            table.getSelectionModel().setSelectionInterval(viewRow, viewRow);
+        }
+
+        fireEditingStopped();
+    }
+
     @Override
     public Component getTableCellRendererComponent(
             JTable table, Object value, boolean isSelected, boolean hasFocus,
             int row, int column) {
+        refreshButtonsForRole();
         renderPanel.setBackground(
                 isSelected ? table.getSelectionBackground()
                            : table.getBackground());
@@ -158,6 +240,7 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
     public Component getTableCellEditorComponent(
             JTable table, Object value, boolean isSelected,
             int row, int column) {
+        refreshButtonsForRole();
         editPanel.setBackground(table.getSelectionBackground());
         return editPanel;
     }
@@ -169,6 +252,16 @@ class CatalogActionCell extends AbstractCellEditor implements TableCellRenderer,
 
     int getPreferredHeight() {
         return renderPanel.getPreferredSize().height;
+    }
+
+    private void refreshButtonsForRole() {
+        String primaryText = buttonText();
+        renderBorrow.setText(primaryText);
+        editBorrow.setText(primaryText);
+
+        boolean librarian = isLibrarian();
+        renderDelete.setVisible(librarian);
+        editDelete.setVisible(librarian);
     }
 
     private boolean isLibrarian() {
